@@ -58,6 +58,7 @@ option(ENABLE_ROCTX "Build with ENABLE_ROCTX support" Off)
 
 option(ENABLE_TBB "Build TBB support" Off)
 option(ENABLE_TARGET_OPENMP "Build OpenMP on target device support" Off)
+option(ENABLE_TARGET_HPX "Build HPX support" Off)
 option(ENABLE_CLANG_CUDA "Use Clang's native CUDA support" Off)
 option(ENABLE_SYCL "Build SYCL support" Off)
 option(ENABLE_EXTERNAL_CUB "Use an external cub" Off)
