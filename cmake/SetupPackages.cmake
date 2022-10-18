@@ -16,17 +16,44 @@ if (ENABLE_OPENMP)
 endif()
 
 if (ENABLE_HPX)
-  find_package(HPX)
-  if(HPX_FOUND)
+  if(EXISTS "${HPX_DIR}")
+    set(__hpx_dir ${HPX_DIR})
+    find_package(HPX REQUIRED NO_CMAKE_PACKAGE_REGISTRY)
+
+    if(NOT HPX_FOUND)
+      message(FATAL_ERROR "HPX could not be found, please set HPX_DIR to help locating it.")
+    endif()
+
+    # HPX_DIR is being reset by find_packe *sigh*
+    set(HPX_DIR ${__hpx_dir})
+
+    # make sure that configured build type for Phylanx matches the one used for HPX
+    get_property(_GENERATOR_IS_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+    if (NOT _GENERATOR_IS_MULTI_CONFIG AND
+        NOT (${HPX_BUILD_TYPE} STREQUAL ${CMAKE_BUILD_TYPE}))
+      list(FIND ${CMAKE_BUILD_TYPE} ${HPX_BUILD_TYPE} __pos)
+      if(${__pos} EQUAL -1)
+        message(
+          "The configured CMAKE_BUILD_TYPE (${CMAKE_BUILD_TYPE}) is "
+          "different from the build type used for the found HPX "
+          "(HPX_BUILD_TYPE: ${HPX_BUILD_TYPE})")
+      endif()
+    endif()
+
+    if(HPX_CXX_STANDARD)
+      set(__hpx_standard "using C++${HPX_CXX_STANDARD}")
+    endif()
+
     blt_register_library(
       NAME hpx
       INCLUDES ${HPX_INCLUDE_DIRS}
       LIBRARIES ${HPX_LIBRARIES})
     message(STATUS "HPX Enabled")
+
   else()
-    message(WARNING "HPX NOT FOUND")
-    set(ENABLE_HPX Off)
+    message(FATAL_ERROR "HPX_DIR has not been specified, please set it to help locating HPX")
   endif()
+
 endif()
 
 if (ENABLE_TBB)

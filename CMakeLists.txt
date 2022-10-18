@@ -88,6 +88,16 @@ set(BLT_EXPORT_THIRDPARTY ON CACHE BOOL "")
 
 cmake_minimum_required(VERSION 3.9)
 
+if (ENABLE_TARGET_HPX)
+  if(NOT HPX_DIR AND HPX_ROOT)
+    set(HPX_DIR ${HPX_ROOT}/lib/cmake/HPX)
+  endif()
+
+  if(NOT HPX_DIR AND EXISTS "$ENV{HPX_DIR}")
+    set(HPX_DIR $ENV{HPX_DIR})
+  endif()
+endif()
+
 if (ENABLE_CUDA)
   if (DEFINED CUDA_ARCH)
     if (CUDA_ARCH MATCHES "^sm_*")
