@@ -153,6 +153,20 @@ int main(int RAJA_UNUSED_ARG(argc), char **RAJA_UNUSED_ARG(argv[]))
 //printResult(c, N);
 #endif
 
+//----------------------------------------------------------------------------//
+
+#if defined(RAJA_ENABLE_HPX)
+  std::cout << "\n Running RAJA HPX vector addition...\n";
+
+  // _rajaomp_vector_add_start
+  RAJA::forall<RAJA::hpx_parallel_for_exec>(RAJA::RangeSegment(0, N), [=] (int i) { 
+    c[i] = a[i] + b[i]; 
+  });
+  // _rajaomp_vector_add_end
+
+  checkResult(c, N);
+//printResult(c, N);
+#endif
 
 //----------------------------------------------------------------------------//
 

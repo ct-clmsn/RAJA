@@ -109,6 +109,38 @@ int main(int RAJA_UNUSED_ARG(argc), char** RAJA_UNUSED_ARG(argv[]))
 
 //----------------------------------------------------------------------------//
 
+#if defined(RAJA_ENABLE_HPX)
+
+  std::cout << "\n\n Running RAJA HPX binning" << std::endl;
+  std::memset(bins, 0, M * sizeof(int));
+
+  // _rajaomp_atomic_histogram_start 
+  RAJA::forall<RAJA::hpx_parallel_for_exec>(array_range, [=](int i) {
+                          
+    RAJA::atomicAdd<RAJA::hpx_atomic>(&bins[array[i]], 1);
+                                           
+  });
+  // _rajaomp_atomic_histogram_end
+
+  printBins(bins, M);
+
+//----------------------------------------------------------------------------//
+
+  std::cout << "\n\n Running RAJA HPX binning with auto atomic" << std::endl;
+  std::memset(bins, 0, M * sizeof(int));
+
+  RAJA::forall<RAJA::hpx_parallel_for_exec>(array_range, [=](int i) {
+  
+    RAJA::atomicAdd<RAJA::auto_atomic>(&bins[array[i]], 1);
+  
+  });
+
+  printBins(bins, M);
+
+#endif
+
+//----------------------------------------------------------------------------//
+
 #if defined(RAJA_ENABLE_CUDA)
 
   std::cout << "\n\nRunning RAJA CUDA binning" << std::endl;

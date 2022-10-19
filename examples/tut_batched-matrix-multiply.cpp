@@ -167,6 +167,8 @@ int main(int RAJA_UNUSED_ARG(argc), char **RAJA_UNUSED_ARG(argv[]))
 //
 #if defined(RAJA_ENABLE_OPENMP)
   using INIT_POL = RAJA::omp_parallel_for_exec;
+#elif defined(RAJA_ENABLE_HPX)
+  using INIT_POL = RAJA::hpx_parallel_for_exec;
 #else
   using INIT_POL = RAJA::loop_exec;
 #endif
@@ -252,6 +254,117 @@ int main(int RAJA_UNUSED_ARG(argc), char **RAJA_UNUSED_ARG(argv[]))
 
     timer.start();
     RAJA::forall<RAJA::omp_parallel_for_exec>(
+        RAJA::RangeSegment(0, N), [=](Index_type e) {
+
+          Cview2(e, 0, 0) = Aview2(e, 0, 0) * Bview2(e, 0, 0)
+                            + Aview2(e, 0, 1) * Bview2(e, 1, 0)
+                            + Aview2(e, 0, 2) * Bview2(e, 2, 0);
+          Cview2(e, 0, 1) = Aview2(e, 0, 0) * Bview2(e, 0, 1)
+                            + Aview2(e, 0, 1) * Bview2(e, 1, 1)
+                            + Aview2(e, 0, 2) * Bview2(e, 2, 1);
+          Cview2(e, 0, 2) = Aview2(e, 0, 0) * Bview2(e, 0, 2)
+                            + Aview2(e, 0, 1) * Bview2(e, 1, 2)
+                            + Aview2(e, 0, 2) * Bview2(e, 2, 2);
+
+          Cview2(e, 1, 0) = Aview2(e, 1, 0) * Bview2(e, 0, 0)
+                            + Aview2(e, 1, 1) * Bview2(e, 1, 0)
+                            + Aview2(e, 1, 2) * Bview2(e, 2, 0);
+          Cview2(e, 1, 1) = Aview2(e, 1, 0) * Bview2(e, 0, 1)
+                            + Aview2(e, 1, 1) * Bview2(e, 1, 1)
+                            + Aview2(e, 1, 2) * Bview2(e, 2, 1);
+          Cview2(e, 1, 2) = Aview2(e, 1, 0) * Bview2(e, 0, 2)
+                            + Aview2(e, 1, 1) * Bview2(e, 1, 2)
+                            + Aview2(e, 1, 2) * Bview2(e, 2, 2);
+
+          Cview2(e, 2, 0) = Aview2(e, 2, 0) * Bview2(e, 0, 0)
+                            + Aview2(e, 2, 1) * Bview2(e, 1, 0)
+                            + Aview2(e, 2, 2) * Bview2(e, 2, 0);
+          Cview2(e, 2, 1) = Aview2(e, 2, 0) * Bview2(e, 0, 1)
+                            + Aview2(e, 2, 1) * Bview2(e, 1, 1)
+                            + Aview2(e, 2, 2) * Bview2(e, 2, 1);
+          Cview2(e, 2, 2) = Aview2(e, 2, 0) * Bview2(e, 0, 2)
+                            + Aview2(e, 2, 1) * Bview2(e, 1, 2)
+                            + Aview2(e, 2, 2) * Bview2(e, 2, 2);
+
+        });
+    timer.stop();
+
+    RAJA::Timer::ElapsedType tMin = timer.elapsed();
+    if (tMin < minRun) minRun = tMin;
+    timer.reset();
+  }
+  std::cout<< "\trun time : " << minRun << " seconds" << std::endl;
+  checkResult(Cview2, N, N_r, N_c);
+
+#endif
+
+//----------------------------------------------------------------------------//
+
+#if defined(RAJA_ENABLE_HPX)
+
+  std::cout << " \n Performing batched matrix multiplication"
+            << " with layout 1 (RAJA - hpx parallel for) ... " << std::endl;
+
+  minRun = std::numeric_limits<double>::max();
+  for (int i = 0; i < NITER; ++i) {
+
+    timer.start();
+    // _permutedlayout_batchedmatmult_omp_start
+    RAJA::forall<RAJA::hpx_parallel_for_exec>(
+        RAJA::RangeSegment(0, N), [=](Index_type e) {
+
+          Cview(e, 0, 0) = Aview(e, 0, 0) * Bview(e, 0, 0)
+                           + Aview(e, 0, 1) * Bview(e, 1, 0)
+                           + Aview(e, 0, 2) * Bview(e, 2, 0);
+          Cview(e, 0, 1) = Aview(e, 0, 0) * Bview(e, 0, 1)
+                           + Aview(e, 0, 1) * Bview(e, 1, 1)
+                           + Aview(e, 0, 2) * Bview(e, 2, 1);
+          Cview(e, 0, 2) = Aview(e, 0, 0) * Bview(e, 0, 2)
+                           + Aview(e, 0, 1) * Bview(e, 1, 2)
+                           + Aview(e, 0, 2) * Bview(e, 2, 2);
+
+          Cview(e, 1, 0) = Aview(e, 1, 0) * Bview(e, 0, 0)
+                           + Aview(e, 1, 1) * Bview(e, 1, 0)
+                           + Aview(e, 1, 2) * Bview(e, 2, 0);
+          Cview(e, 1, 1) = Aview(e, 1, 0) * Bview(e, 0, 1)
+                           + Aview(e, 1, 1) * Bview(e, 1, 1)
+                           + Aview(e, 1, 2) * Bview(e, 2, 1);
+          Cview(e, 1, 2) = Aview(e, 1, 0) * Bview(e, 0, 2)
+                           + Aview(e, 1, 1) * Bview(e, 1, 2)
+                           + Aview(e, 1, 2) * Bview(e, 2, 2);
+
+          Cview(e, 2, 0) = Aview(e, 2, 0) * Bview(e, 0, 0)
+                           + Aview(e, 2, 1) * Bview(e, 1, 0)
+                           + Aview(e, 2, 2) * Bview(e, 2, 0);
+          Cview(e, 2, 1) = Aview(e, 2, 0) * Bview(e, 0, 1)
+                           + Aview(e, 2, 1) * Bview(e, 1, 1)
+                           + Aview(e, 2, 2) * Bview(e, 2, 1);
+          Cview(e, 2, 2) = Aview(e, 2, 0) * Bview(e, 0, 2)
+                           + Aview(e, 2, 1) * Bview(e, 1, 2)
+                           + Aview(e, 2, 2) * Bview(e, 2, 2);
+
+        });
+    // _permutedlayout_batchedmatmult_omp_end
+    timer.stop();
+
+    RAJA::Timer::ElapsedType tMin = timer.elapsed();
+    if (tMin < minRun) minRun = tMin;
+    timer.reset();
+  }
+  
+  std::cout<< "\trun time : " << minRun << " seconds" << std::endl;
+  checkResult(Cview, N, N_r, N_c);
+
+//----------------------------------------------------------------------------//
+
+  std::cout << " \n Performing batched matrix multiplication"
+            << " with layout 2 (RAJA - hpx parallel for) ... " << std::endl;
+
+  minRun = std::numeric_limits<double>::max();
+  for (int i = 0; i < NITER; ++i) {
+
+    timer.start();
+    RAJA::forall<RAJA::hpx_parallel_for_exec>(
         RAJA::RangeSegment(0, N), [=](Index_type e) {
 
           Cview2(e, 0, 0) = Aview2(e, 0, 0) * Bview2(e, 0, 0)

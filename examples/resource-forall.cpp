@@ -184,7 +184,43 @@ int main(int RAJA_UNUSED_ARG(argc), char **RAJA_UNUSED_ARG(argv[]))
   checkResult(c, N);
 #endif
 
+#if defined(RAJA_ENABLE_HPX)
+//----------------------------------------------------------------------------//
+// RAJA::hpx_for_parallel_exec policy execution.... 
+//----------------------------------------------------------------------------//
 
+  std::cout << "\n Running RAJA hpx_parallel_for_exec vector addition...\n";
+
+  RAJA::forall<RAJA::hpx_parallel_for_exec>(host, RAJA::RangeSegment(0, N), [=] RAJA_DEVICE (int i) { 
+    c[i] = a[i] + b[i]; 
+  });
+
+  checkResult(c, N);
+
+//----------------------------------------------------------------------------//
+// RAJA::hpx_parallel_for_static_exec policy execution.... 
+//----------------------------------------------------------------------------//
+
+  std::cout << "\n Running RAJA hpx_parallel_for_static_exec (default chunksize) vector addition...\n";
+
+  RAJA::forall<RAJA::hpx_parallel_for_static_exec< >>(host, RAJA::RangeSegment(0, N), [=] (int i) { 
+    c[i] = a[i] + b[i]; 
+  });
+
+  checkResult(c, N);
+
+//----------------------------------------------------------------------------//
+// RAJA::hpx_parallel_for_dynamic_exec policy execution.... 
+//----------------------------------------------------------------------------//
+
+  std::cout << "\n Running RAJA hpx_for_dynamic_exec (chunksize = 16) vector addition...\n";
+
+  RAJA::forall<RAJA::hpx_parallel_for_dynamic_exec<16>>(host, RAJA::RangeSegment(0, N), [=] (int i) { 
+    c[i] = a[i] + b[i]; 
+  });
+
+  checkResult(c, N);
+#endif
 
 #if defined(RAJA_ENABLE_CUDA) || defined(RAJA_ENABLE_HIP) || defined(RAJA_ENABLE_SYCL)
 
