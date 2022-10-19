@@ -24,6 +24,10 @@
 #include <omp.h>
 #endif
 
+#if defined(RAJA_ENABLE_HPX)
+#include <hpx/modules/synchronization.hpp>
+#endif
+
 namespace RAJA
 {
 
@@ -60,6 +64,15 @@ private:
 
 }  // namespace omp
 #endif  // closing endif for if defined(RAJA_ENABLE_OPENMP)
+
+#if defined(RAJA_ENABLE_HPX)
+namespace hpx
+{
+
+using mutex = hpx::spinlock;
+
+} // namespace hpx
+#endif
 
 //! class providing functionality of std::lock_guard
 template <typename mutex_type>
