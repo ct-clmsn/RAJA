@@ -39,4 +39,8 @@
 #include "RAJA/policy/openmp/teams.hpp"
 #endif
 
+#if defined(RAJA_ENABLE_HPX)
+#include "RAJA/policy/hpx/teams.hpp"
+#endif
+
 #endif /* RAJA_pattern_teams_HPP */
