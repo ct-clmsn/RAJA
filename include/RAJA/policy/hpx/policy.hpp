@@ -19,6 +19,7 @@
 #define policy_hpx_HPP
 
 #include <type_traits>
+#include <hpx/local/barrier.hpp>
 
 #include "RAJA/policy/PolicyBase.hpp"
 
@@ -291,6 +292,11 @@ struct hpx_reduce_ordered
 struct hpx_synchronize : make_policy_pattern_launch_t<Policy::hpx,
                                                       Pattern::synchronize,
                                                       Launch::sync> {
+    hpx_synchronize() : bar() {}
+
+    void operator()() { bar.arrive_and_wait(); }
+
+    hpx::barrier<> bar;
 };
 
 #if defined(RAJA_COMPILER_MSVC)
