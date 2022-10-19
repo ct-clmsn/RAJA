@@ -281,6 +281,11 @@ if (ENABLE_TBB)
     tbb)
 endif ()
 
+if (ENABLE_HPX)
+  set (raja_depends
+    HPX::hpx)
+endif ()
+
 message(STATUS "Desul Atomics support is ${RAJA_ENABLE_DESUL_ATOMICS}")
 if (RAJA_ENABLE_DESUL_ATOMICS)
   add_subdirectory(tpl/desul)

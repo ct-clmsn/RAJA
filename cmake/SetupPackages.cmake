@@ -48,6 +48,7 @@ if (ENABLE_HPX)
       NAME HPX::hpx
       INCLUDES ${HPX_INCLUDE_DIRS}
       LIBRARIES ${HPX_LIBRARIES})
+
     message(STATUS "HPX Enabled")
 
   else()
