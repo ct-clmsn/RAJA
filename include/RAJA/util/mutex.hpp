@@ -69,7 +69,7 @@ private:
 namespace hpx
 {
 
-using mutex = hpx::spinlock;
+using mutex = ::hpx::spinlock;
 
 } // namespace hpx
 #endif

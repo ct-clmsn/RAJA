@@ -51,12 +51,12 @@ namespace hpx
 */
 template <typename Sorter, typename Iter, typename Compare>
 inline
-void sort(Sorter sorter,
+void sort(Sorter,
           Iter begin,
           Iter end,
           Compare comp)
 {
-    hpx::parallel::algorithms::sort(hpx::execution::par, begin, end, comp);
+    ::hpx::sort(::hpx::execution::par, begin, end, comp);
 }
 
 } // namespace hpx

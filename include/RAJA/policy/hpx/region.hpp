@@ -39,7 +39,7 @@ namespace hpx
 template <typename Func>
 RAJA_INLINE void region_impl(const hpx_parallel_region &, Func &&body)
 {
-    hpx::parallel::define_task_block(hpx::execution::par, [&](auto& trh) {
+    ::hpx::parallel::define_task_block(::hpx::execution::par, [&](auto& trh) {
         // curly brackets to ensure body() is encapsulated in hpx parallel region
         //thread private copy of body
         auto loopbody = body;

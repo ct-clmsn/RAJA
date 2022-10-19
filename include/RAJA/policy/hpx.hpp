@@ -24,11 +24,9 @@
 #include "RAJA/config.hpp"
 
 #if defined(RAJA_ENABLE_HPX)
-
-#include <hpx/config.hpp>
-#if !defined(HPX_COMPUTE_DEVICE_CODE)
 #include <hpx/algorithm.hpp>
-#include <hpx/hpx_main.hpp>
+#endif  // closing endif for if defined(RAJA_ENABLE_HPX)
+
 #include <iostream>
 #include <thread>
 
@@ -46,8 +44,5 @@
 #include "RAJA/policy/hpx/synchronize.hpp"
 #include "RAJA/policy/hpx/teams.hpp"
 #include "RAJA/policy/hpx/WorkGroup.hpp"
-
-
-#endif  // closing endif for if defined(RAJA_ENABLE_HPX)
 
 #endif  // closing endif for header file include guard

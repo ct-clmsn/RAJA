@@ -283,7 +283,8 @@ endif ()
 
 if (ENABLE_HPX)
   set (raja_depends
-    HPX::hpx)
+    ${raja_depends}
+    HPX::hpx HPX::wrap_main)
 endif ()
 
 message(STATUS "Desul Atomics support is ${RAJA_ENABLE_DESUL_ATOMICS}")

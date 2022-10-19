@@ -21,6 +21,7 @@ if (ENABLE_HPX)
     find_package(HPX REQUIRED NO_CMAKE_PACKAGE_REGISTRY)
 
     if(NOT HPX_FOUND)
+      set(ENABLE_HPX Off)
       message(FATAL_ERROR "HPX could not be found, please set HPX_DIR to help locating it.")
     endif()
 
@@ -45,7 +46,7 @@ if (ENABLE_HPX)
     endif()
 
     blt_register_library(
-      NAME HPX::hpx
+      NAME HPX::hpx HPX::wrap_main
       INCLUDES ${HPX_INCLUDE_DIRS}
       LIBRARIES ${HPX_LIBRARIES})
 
@@ -132,6 +133,7 @@ blt_list_append(TO TPL_DEPS ELEMENTS hip hip_runtime IF ENABLE_HIP)
 blt_list_append(TO TPL_DEPS ELEMENTS rocPRIM IF ENABLE_EXTERNAL_ROCPRIM)
 blt_list_append(TO TPL_DEPS ELEMENTS openmp IF ENABLE_OPENMP)
 blt_list_append(TO TPL_DEPS ELEMENTS HPX::hpx IF ENABLE_HPX)
+blt_list_append(TO TPL_DEPS ELEMENTS HPX::wrap_main IF ENABLE_HPX)
 blt_list_append(TO TPL_DEPS ELEMENTS mpi IF ENABLE_MPI)
 
 foreach(dep ${TPL_DEPS})

@@ -33,7 +33,7 @@ namespace hpx
 RAJA_INLINE
 void synchronize_impl(const hpx_synchronize& sync)
 {
-    sync();
+   sync.bar->arrive_and_wait();
 }
 
 

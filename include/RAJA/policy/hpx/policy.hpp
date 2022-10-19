@@ -28,7 +28,6 @@
 // Rely on builtin_atomic when HPX can't do the job
 #include "RAJA/policy/atomic_builtin.hpp"
 
-#if defined(RAJA_COMPILER_MSVC)
 typedef enum hpx_sched_t { 
     // schedule kinds 
     hpx_sched_static = 0x1, 
@@ -39,9 +38,6 @@ typedef enum hpx_sched_t {
     // schedule modifier 
     hpx_sched_monotonic = 0x80000000u 
 } hpx_sched_t;
-#else
-#include <hpx.hpp>
-#endif
 
 namespace RAJA
 {
@@ -94,11 +90,12 @@ template <int ChunkSize = default_chunk_size>
 using Guided = internal::Schedule<hpx_sched_guided, ChunkSize>;
 
 struct Runtime : private internal::Schedule<static_cast<hpx_sched_t>(-1), default_chunk_size> {
-    Runtime() : exec(hpx::execution::par) {}
-    Runtime(hpx::execution::parallel_executor && ex) : exec(ex) {}
-    Runtime(hpx::execution::parallel_executor&) = delete;
-    Runtime(hpx::execution::parallel_executor) = delete;
-    hpx::execution::parallel_executor exec;
+    Runtime() : exec() {} 
+    Runtime(::hpx::execution::parallel_executor&& ex) { exec = ex; }
+    Runtime(::hpx::execution::parallel_executor&) = delete;
+    Runtime(::hpx::execution::parallel_executor) = delete;
+
+    ::hpx::execution::parallel_executor exec;
 };
 
 //
@@ -294,11 +291,9 @@ struct hpx_reduce_ordered
 struct hpx_synchronize : make_policy_pattern_launch_t<Policy::hpx,
                                                       Pattern::synchronize,
                                                       Launch::sync> {
-    hpx_synchronize() : bar() {}
+    hpx_synchronize() : bar(std::make_shared<::hpx::barrier<>>(1)) {}
 
-    void operator()() { bar.arrive_and_wait(); }
-
-    hpx::barrier<> bar;
+    std::shared_ptr<::hpx::barrier<>> bar;
 };
 
 #if defined(RAJA_COMPILER_MSVC)

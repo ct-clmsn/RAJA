@@ -75,9 +75,9 @@ struct StatementExecutor<statement::Collapse<hpx_parallel_collapse_exec,
     using NewTypes0 = setSegmentTypeFromData<Types, Arg0, Data>;
     using NewTypes1 = setSegmentTypeFromData<NewTypes0, Arg1, Data>;
 
-    auto rng = hpx::util::detail::make_counting_shape(len);
+    auto rng = ::hpx::util::detail::make_counting_shape(len);
 
-    hpx::foreach(hpx::execution::par,
+    ::hpx::for_each(::hpx::execution::par,
         std::begin(rng), std::end(rng), [&](const auto i) {
             const auto x = i / l1;
             const auto y = i % l1;
@@ -120,11 +120,11 @@ struct StatementExecutor<statement::Collapse<hpx_parallel_collapse_exec,
     using NewTypes1 = setSegmentTypeFromData<NewTypes0, Arg1, Data>;
     using NewTypes2 = setSegmentTypeFromData<NewTypes1, Arg2, Data>;
 
-    auto rng = hpx::util::detail::make_counting_shape(len);
+    auto rng = ::hpx::util::detail::make_counting_shape(len);
 
     const auto YZ = l1 * l2;
 
-    hpx::foreach(hpx::execution::par,
+    ::hpx::for_each(::hpx::execution::par,
         std::begin(rng), std::end(rng), [&](const auto i) {
             const auto modiYZ = i % YZ;
             const auto z = modiYZ % l2;

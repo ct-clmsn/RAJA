@@ -86,6 +86,10 @@
 #endif
 
 #if defined(RAJA_ENABLE_HPX)
+
+#include <hpx/config.hpp>
+#include <hpx/hpx_main.hpp>
+
 #include "RAJA/policy/hpx.hpp"
 #endif
 

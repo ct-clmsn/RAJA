@@ -57,19 +57,19 @@ public:
   ~ReduceHPX()
   {
     if (Base::parent) {
-      std::lock_guard<hpx::spinlock> l(mut_);
+      std::lock_guard<::hpx::spinlock> l(mtx_);
       Reduce()(Base::parent->local(), Base::my_data);
       Base::my_data = Base::identity;
     }
   }
 
 private:
-  static mutable hpx::spinlock mtx_;
+  static ::hpx::spinlock mtx_;
 
 };
 
 template <typename T, typename Reduce>
-hpx::spinlock ReduceHPX<T, Reduce>::mtx_ = hpx::spinlock{};
+::hpx::spinlock ReduceHPX<T, Reduce>::mtx_ = ::hpx::spinlock{};
 
 }  // namespace detail
 
@@ -104,19 +104,19 @@ public:
   {
     Base::reset(init_val, identity_);
     data = std::shared_ptr<std::vector<T>>(
-        std::make_shared<std::vector<T>>(hpx_get_max_threads(), identity_));
+        std::make_shared<std::vector<T>>(::hpx::threads::get_thread_data(::hpx::threads::get_self_id()), identity_));
   }
 
   ~ReduceHPXOrdered()
   {
-    Reduce{}((*data)[hpx_get_thread_num()], Base::my_data);
+    Reduce{}((*data)[::hpx::threads::get_thread_data(::hpx::threads::get_self_id())], Base::my_data);
     Base::my_data = Base::identity;
   }
 
   T get_combined() const
   {
     if (Base::my_data != Base::identity) {
-      Reduce{}((*data)[hpx_get_thread_num()], Base::my_data);
+      Reduce{}((*data)[::hpx::threads::get_thread_data(::hpx::threads::get_self_id())], Base::my_data);
       Base::my_data = Base::identity;
     }
 

@@ -3,7 +3,7 @@
  *
  * \file
  *
- * \brief   RAJA header file containing user interface for RAJA::Teams::openmp
+ * \brief   RAJA header file containing user interface for RAJA::Teams::hpx
  *
  ******************************************************************************
  */
@@ -15,14 +15,14 @@
 // SPDX-License-Identifier: (BSD-3-Clause)
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-#ifndef RAJA_pattern_teams_openmp_HPP
-#define RAJA_pattern_teams_openmp_HPP
+#ifndef RAJA_pattern_teams_hpx_HPP
+#define RAJA_pattern_teams_hpx_HPP
 
 #include <hpx/local/execution.hpp>
 #include <hpx/parallel/algorithms/for_each.hpp>
 
 #include "RAJA/pattern/teams/teams_core.hpp"
-#include "RAJA/policy/openmp/policy.hpp"
+#include "RAJA/policy/hpx/policy.hpp"
 
 
 namespace RAJA
@@ -76,9 +76,9 @@ struct LoopExecute<hpx_parallel_for_exec, SEGMENT> {
       using RAJA::internal::thread_privatize;
       auto loop_body = thread_privatize(body);
 
-      auto irange = hpx::util::detail::make_counting_shape(len);
+      auto irange = ::hpx::util::detail::make_counting_shape(len);
 
-      hpx::for_each(hpx::execution::par, hpx::util::begin(irange), hpx::util::end(irange), [&](const int i) {
+      ::hpx::for_each(::hpx::execution::par, ::hpx::util::begin(irange), ::hpx::util::end(irange), [&](const int i) {
           loop_body.get_priv()(*(segment.begin() + i));
       });
     });
@@ -99,8 +99,8 @@ struct LoopExecute<hpx_parallel_for_exec, SEGMENT> {
       using RAJA::internal::thread_privatize;
       auto loop_body = thread_privatize(body);
 
-      auto irange = hpx::util::detail::make_counting_shape(len1);
-      hpx::for_each(hpx::execution::par, hpx::util::begin(irange), hpx::util::end(irange), [&](const int j) {
+      auto irange = ::hpx::util::detail::make_counting_shape(len1);
+      ::hpx::for_each(::hpx::execution::par, ::hpx::util::begin(irange), ::hpx::util::end(irange), [&](const int j) {
         for (int i = 0; i < len0; i++) {
           loop_body.get_priv()(*(segment0.begin() + i),
                                *(segment1.begin() + j));
@@ -126,8 +126,8 @@ struct LoopExecute<hpx_parallel_for_exec, SEGMENT> {
       using RAJA::internal::thread_privatize;
       auto loop_body = thread_privatize(body);
 
-      auto irange = hpx::util::detail::make_counting_shape(len2);
-      hpx::for_each(hpx::execution::par, hpx::util::begin(irange), hpx::util::end(irange), [&](const int k) {
+      auto irange = ::hpx::util::detail::make_counting_shape(len2);
+      ::hpx::for_each(::hpx::execution::par, ::hpx::util::begin(irange), ::hpx::util::end(irange), [&](const int k) {
         for (int j = 0; j < len1; j++) {
           for (int i = 0; i < len0; i++) {
             loop_body.get_priv()(*(segment0.begin() + i),
@@ -151,9 +151,9 @@ struct LoopExecute<hpx_for_exec, SEGMENT> {
   {
 
     int len = segment.end() - segment.begin();
-    auto irange = hpx::util::detail::make_counting_shape(len);
+    auto irange = ::hpx::util::detail::make_counting_shape(len);
 
-    hpx::for_each(hpx::execution::par, hpx::util::begin(irange), hpx::util::end(irange), [&](const int i) {
+    ::hpx::for_each(::hpx::execution::par, ::hpx::util::begin(irange), ::hpx::util::end(irange), [&](const int i) {
       body(*(segment.begin() + i));
     });
   }
@@ -169,9 +169,9 @@ struct LoopExecute<hpx_for_exec, SEGMENT> {
     const int len1 = segment1.end() - segment1.begin();
     const int len0 = segment0.end() - segment0.begin();
 
-    auto irange = hpx::util::detail::make_counting_shape(len1);
+    auto irange = ::hpx::util::detail::make_counting_shape(len1);
 
-    hpx::for_each(hpx::execution::par, hpx::util::begin(irange), hpx::util::end(irange), [&](const int j) {
+    ::hpx::for_each(::hpx::execution::par, ::hpx::util::begin(irange), ::hpx::util::end(irange), [&](const int j) {
       for (int i = 0; i < len0; i++) {
         body(*(segment0.begin() + i), *(segment1.begin() + j));
       }
@@ -191,9 +191,9 @@ struct LoopExecute<hpx_for_exec, SEGMENT> {
     const int len1 = segment1.end() - segment1.begin();
     const int len0 = segment0.end() - segment0.begin();
 
-    auto irange = hpx::util::detail::make_counting_shape(len2);
+    auto irange = ::hpx::util::detail::make_counting_shape(len2);
 
-    hpx::for_each(hpx::execution::par, hpx::util::begin(irange), hpx::util::end(irange), [&](const int k) {
+    ::hpx::for_each(::hpx::execution::par, ::hpx::util::begin(irange), ::hpx::util::end(irange), [&](const int k) {
       for (int j = 0; j < len1; j++) {
         for (int i = 0; i < len0; i++) {
           body(*(segment0.begin() + i),
@@ -223,9 +223,9 @@ struct LoopICountExecute<hpx_parallel_for_exec, SEGMENT> {
       using RAJA::internal::thread_privatize;
       auto loop_body = thread_privatize(body);
 
-      auto irange = hpx::util::detail::make_counting_shape(len);
+      auto irange = ::hpx::util::detail::make_counting_shape(len);
 
-      hpx::for_each(hpx::execution::par, hpx::util::begin(irange), hpx::util::end(irange), [&](const int i) {
+      ::hpx::for_each(::hpx::execution::par, ::hpx::util::begin(irange), ::hpx::util::end(irange), [&](const int i) {
         loop_body.get_priv()(*(segment.begin() + i), i);
       });
     });
@@ -246,8 +246,8 @@ struct LoopICountExecute<hpx_parallel_for_exec, SEGMENT> {
       using RAJA::internal::thread_privatize;
       auto loop_body = thread_privatize(body);
 
-      auto irange = hpx::util::detail::make_counting_shape(len1);
-      hpx::for_each(hpx::execution::par, hpx::util::begin(irange), hpx::util::end(irange), [&](const int j) {
+      auto irange = ::hpx::util::detail::make_counting_shape(len1);
+      ::hpx::for_each(::hpx::execution::par, ::hpx::util::begin(irange), ::hpx::util::end(irange), [&](const int j) {
         for (int i = 0; i < len0; i++) {
 
           loop_body.get_priv()(*(segment0.begin() + i),
@@ -276,8 +276,8 @@ struct LoopICountExecute<hpx_parallel_for_exec, SEGMENT> {
       using RAJA::internal::thread_privatize;
       auto loop_body = thread_privatize(body);
 
-      auto irange = hpx::util::detail::make_counting_shape(len2);
-      hpx::for_each(hpx::execution::par, hpx::util::begin(irange), hpx::util::end(irange), [&](const int k) {
+      auto irange = ::hpx::util::detail::make_counting_shape(len2);
+      ::hpx::for_each(::hpx::execution::par, ::hpx::util::begin(irange), ::hpx::util::end(irange), [&](const int k) {
         for (int j = 0; j < len1; j++) {
           for (int i = 0; i < len0; i++) {
             loop_body.get_priv()(*(segment0.begin() + i),
@@ -308,8 +308,6 @@ struct LoopExecute<hpx_parallel_nested_for_exec, SEGMENT> {
   {
     const int len1 = segment1.end() - segment1.begin();
     const int len0 = segment0.end() - segment0.begin();
-    auto i0 = len0;
-    auto i1 = len1;
 
     const auto len = len0 * len1;
 
@@ -317,9 +315,9 @@ struct LoopExecute<hpx_parallel_nested_for_exec, SEGMENT> {
       using RAJA::internal::thread_privatize;
       auto loop_body = thread_privatize(body);
 
-      auto rng = hpx::util::detail::make_counting_shape(len);
+      auto rng = ::hpx::util::detail::make_counting_shape(len);
 
-      hpx::foreach(hpx::execution::par,
+      ::hpx::for_each(::hpx::execution::par,
           std::begin(rng), std::end(rng), [&](const auto i) {
               const auto x = i / len1;
               const auto y = i % len1;
@@ -344,23 +342,20 @@ struct LoopExecute<hpx_parallel_nested_for_exec, SEGMENT> {
     const int len2 = segment2.end() - segment2.begin();
     const int len1 = segment1.end() - segment1.begin();
     const int len0 = segment0.end() - segment0.begin();
-    auto i0 = len0;
-    auto i1 = len1;
-    auto i2 = len2;
     const auto len = len0 * len1 * len2;
 
     RAJA::region<RAJA::hpx_parallel_region>([&]() {
-      auto rng = hpx::util::detail::make_counting_shape(len);
+      auto rng = ::hpx::util::detail::make_counting_shape(len);
       const auto YZ = len1 * len2;
 
       using RAJA::internal::thread_privatize;
       auto loop_body = thread_privatize(body);
 
-      hpx::foreach(hpx::execution::par,
+      ::hpx::for_each(::hpx::execution::par,
           std::begin(rng), std::end(rng), [&](const auto i) {
               const auto modiYZ = i % YZ;
-              const auto z = modiYZ % l2;
-              const auto y = modiYZ / l2;
+              const auto z = modiYZ % len2;
+              const auto y = modiYZ / len2;
               const auto x = i / YZ; 
 
               loop_body.get_priv()(*(segment0.begin() + x),
@@ -387,8 +382,6 @@ struct LoopICountExecute<hpx_parallel_nested_for_exec, SEGMENT> {
 
     const int len1 = segment1.end() - segment1.begin();
     const int len0 = segment0.end() - segment0.begin();
-    auto i0 = len0;
-    auto i1 = len1;
 
     const auto len = len0 * len1;
 
@@ -396,9 +389,9 @@ struct LoopICountExecute<hpx_parallel_nested_for_exec, SEGMENT> {
       using RAJA::internal::thread_privatize;
       auto loop_body = thread_privatize(body);
 
-      auto rng = hpx::util::detail::make_counting_shape(len);
+      auto rng = ::hpx::util::detail::make_counting_shape(len);
 
-      hpx::foreach(hpx::execution::par,
+      ::hpx::for_each(::hpx::execution::par,
           std::begin(rng), std::end(rng), [&](const auto i) {
               const auto x = i / len1;
               const auto y = i % len1;
@@ -409,6 +402,7 @@ struct LoopICountExecute<hpx_parallel_nested_for_exec, SEGMENT> {
                                    y);
           }
       );
+    });
   }
 
   template <typename BODY>
@@ -423,23 +417,20 @@ struct LoopICountExecute<hpx_parallel_nested_for_exec, SEGMENT> {
     const int len2 = segment2.end() - segment2.begin();
     const int len1 = segment1.end() - segment1.begin();
     const int len0 = segment0.end() - segment0.begin();
-    auto i0 = len0;
-    auto i1 = len1;
-    auto i2 = len2;
     const auto len = len0 * len1 * len2;
 
     RAJA::region<RAJA::hpx_parallel_region>([&]() {
-      auto rng = hpx::util::detail::make_counting_shape(len);
+      auto rng = ::hpx::util::detail::make_counting_shape(len);
       const auto YZ = len1 * len2;
 
       using RAJA::internal::thread_privatize;
       auto loop_body = thread_privatize(body);
 
-      hpx::foreach(hpx::execution::par,
+      ::hpx::for_each(::hpx::execution::par,
           std::begin(rng), std::end(rng), [&](const auto i) {
               const auto modiYZ = i % YZ;
-              const auto z = modiYZ % l2;
-              const auto y = modiYZ / l2;
+              const auto z = modiYZ % len2;
+              const auto y = modiYZ / len2;
               const auto x = i / YZ; 
               loop_body.get_priv()(*(segment0.begin() + x),
                                    *(segment1.begin() + y),
@@ -472,11 +463,11 @@ struct TileExecute<hpx_parallel_for_exec, SEGMENT> {
       auto loop_body = thread_privatize(body);
 
       auto ex =
-          hpx::execution::par.on(hpx::execution::parallel_executor{}).with(tile_size);
+          ::hpx::execution::par.on(::hpx::execution::parallel_executor{}).with(tile_size);
 
-      auto irange = hpx::util::detail::make_counting_shape(len);
+      auto irange = ::hpx::util::detail::make_counting_shape(len);
 
-      hpx::for_each(hpx::util::begin(irange), hpx::util::end(irange), [&](const int i) {
+      ::hpx::for_each(::hpx::util::begin(irange), ::hpx::util::end(irange), [&](const int i) {
         loop_body.get_priv()(segment.slice(i, tile_size));
       });
     });
@@ -501,8 +492,8 @@ struct TileICountExecute<hpx_parallel_for_exec, SEGMENT> {
       using RAJA::internal::thread_privatize;
       auto loop_body = thread_privatize(body);
 
-      auto irange = hpx::util::detail::make_counting_shape(numTiles);
-      hpx::for_each(hpx::execution::par, hpx::util::begin(irange), hpx::util::end(irange), [&](const int i) {
+      auto irange = ::hpx::util::detail::make_counting_shape(numTiles);
+      ::hpx::for_each(::hpx::execution::par, ::hpx::util::begin(irange), ::hpx::util::end(irange), [&](const int i) {
         const int i_tile_size = i * tile_size;
         loop_body.get_priv()(segment.slice(i_tile_size, tile_size), i);
       });
@@ -524,11 +515,11 @@ struct TileExecute<hpx_for_exec, SEGMENT> {
     int len = segment.end() - segment.begin();
 
     auto ex =
-        hpx::execution::par.on(hpx::execution::parallel_executor{}).with(tile_size);
+        ::hpx::execution::par.on(::hpx::execution::parallel_executor{}).with(tile_size);
 
-    auto irange = hpx::util::detail::make_counting_shape(len);
+    auto irange = ::hpx::util::detail::make_counting_shape(len);
 
-    hpx::for_each(hpx::execution::par, hpx::util::begin(irange), hpx::util::end(irange), [&](const int i) {
+    ::hpx::for_each(::hpx::execution::par, ::hpx::util::begin(irange), ::hpx::util::end(irange), [&](const int i) {
       body(segment.slice(i, tile_size));
     });
   }
@@ -548,8 +539,8 @@ struct TileICountExecute<hpx_for_exec, SEGMENT> {
     const int len = segment.end() - segment.begin();
     const int numTiles = (len - 1) / tile_size + 1;
 
-    auto irange = hpx::util::detail::make_counting_shape(numTiles);
-    hpx::for_each(hpx::execution::par, hpx::util::begin(irange), hpx::util::end(irange), [&](const int i) {
+    auto irange = ::hpx::util::detail::make_counting_shape(numTiles);
+    ::hpx::for_each(::hpx::execution::par, ::hpx::util::begin(irange), ::hpx::util::end(irange), [&](const int i) {
       const int i_tile_size = i * tile_size;
       body.get_priv()(segment.slice(i_tile_size, tile_size), i);
     });

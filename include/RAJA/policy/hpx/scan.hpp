@@ -55,7 +55,7 @@ inclusive_inplace(
     Iter end,
     BinFn f)
 {
-  hpx::parallel::algorithms::inclusive_scan(begin, end, begin, f);
+  ::hpx::inclusive_scan(begin, end, begin, f);
   return resources::EventProxy<resources::Host>(host_res);
 }
 
@@ -75,7 +75,7 @@ exclusive_inplace(
     BinFn f,
     ValueT v)
 {
-  hpx::parallel::algorithms::exclusive_scan(begin, end, begin, f, v);
+  ::hpx::exclusive_scan(begin, end, begin, f, v);
   return resources::EventProxy<resources::Host>(host_res);
 }
 
@@ -89,13 +89,13 @@ concepts::enable_if_t<resources::EventProxy<resources::Host>,
                       type_traits::is_hpx_policy<Policy>>
 inclusive(
     resources::Host host_res,
-    const Policy& exec,
+    const Policy&,
     Iter begin,
     Iter end,
     OutIter out,
     BinFn f)
 {
-  hpx::parallel::algorithms::inclusive_scan(begin, end, out, f);
+  ::hpx::inclusive_scan(begin, end, out, f);
   return resources::EventProxy<resources::Host>(host_res);
 }
 
@@ -113,14 +113,14 @@ concepts::enable_if_t<resources::EventProxy<resources::Host>,
                       type_traits::is_hpx_policy<Policy>>
 exclusive(
     resources::Host host_res,
-    const Policy& exec,
+    const Policy&,
     Iter begin,
     Iter end,
     OutIter out,
     BinFn f,
     ValueT v)
 {
-  hpx::parallel::algorithms::exclusive_scan(begin, end, out, f, v);
+  ::hpx::exclusive_scan(begin, end, out, f, v);
   return resources::EventProxy<resources::Host>(host_res);
 }
 

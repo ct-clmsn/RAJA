@@ -37,10 +37,10 @@ namespace RAJA
 namespace statement
 {
 struct HPXSyncThreads : public internal::Statement<camp::nil> {
-  static hpx::barrier<> bar;
+  static std::shared_ptr<::hpx::barrier<>> bar;
 };
 
-hpx::barrier<> HPXSyncThreads::bar = hpx::barrier<>{};
+std::shared_ptr<::hpx::barrier<>> HPXSyncThreads::bar = std::make_shared<::hpx::barrier<>>(1);
 
 } // namespace statement
 
@@ -56,7 +56,7 @@ struct StatementExecutor<statement::HPXSyncThreads, Types> {
   template<typename Data>
   static RAJA_INLINE void exec(Data &&)
   {
-    statement::HPXSyncThreads::bar.arrive_and_wait();
+    statement::HPXSyncThreads::bar->arrive_and_wait();
   }
 
 };
