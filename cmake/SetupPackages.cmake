@@ -45,7 +45,7 @@ if (ENABLE_HPX)
     endif()
 
     blt_register_library(
-      NAME hpx
+      NAME HPX::hpx
       INCLUDES ${HPX_INCLUDE_DIRS}
       LIBRARIES ${HPX_LIBRARIES})
     message(STATUS "HPX Enabled")
@@ -130,7 +130,7 @@ blt_list_append(TO TPL_DEPS ELEMENTS cub IF ENABLE_EXTERNAL_CUB)
 blt_list_append(TO TPL_DEPS ELEMENTS hip hip_runtime IF ENABLE_HIP)
 blt_list_append(TO TPL_DEPS ELEMENTS rocPRIM IF ENABLE_EXTERNAL_ROCPRIM)
 blt_list_append(TO TPL_DEPS ELEMENTS openmp IF ENABLE_OPENMP)
-blt_list_append(TO TPL_DEPS ELEMENTS hpx IF ENABLE_HPX)
+blt_list_append(TO TPL_DEPS ELEMENTS HPX::hpx IF ENABLE_HPX)
 blt_list_append(TO TPL_DEPS ELEMENTS mpi IF ENABLE_MPI)
 
 foreach(dep ${TPL_DEPS})

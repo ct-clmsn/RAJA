@@ -28,7 +28,8 @@
 #include <iostream>
 #include <type_traits>
 
-#include <hpx.h>
+#include <hpx/local/execution.hpp>
+#include <hpx/parallel/algorithms/for_each.hpp>
 
 #include "RAJA/util/types.hpp"
 

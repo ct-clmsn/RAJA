@@ -15,12 +15,15 @@
 // SPDX-License-Identifier: (BSD-3-Clause)
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-#ifndef RAJA_policy_openmp_kernel_collapse_HPP
-#define RAJA_policy_openmp_kernel_collapse_HPP
+#ifndef RAJA_policy_hpx_kernel_collapse_HPP
+#define RAJA_policy_hpx_kernel_collapse_HPP
 
 #include "RAJA/config.hpp"
 
-#if defined(RAJA_ENABLE_OPENMP)
+#if defined(RAJA_ENABLE_HPX)
+
+#include <hpx/local/execution.hpp>
+#include <hpx/parallel/algorithms/for_each.hpp>
 
 #include "RAJA/pattern/detail/privatizer.hpp"
 
@@ -30,15 +33,15 @@
 #include "RAJA/util/macros.hpp"
 #include "RAJA/util/types.hpp"
 
-#include "RAJA/policy/openmp/policy.hpp"
+#include "RAJA/policy/hpx/policy.hpp"
 
 namespace RAJA
 {
 
-struct omp_parallel_collapse_exec
-    : make_policy_pattern_t<RAJA::Policy::openmp,
+struct hpx_parallel_collapse_exec
+    : make_policy_pattern_t<RAJA::Policy::hpx,
                             RAJA::Pattern::forall,
-                            RAJA::policy::omp::For> {
+                            RAJA::policy::hpx::For> {
 };
 
 namespace internal
@@ -49,7 +52,7 @@ namespace internal
 /////////
 
 template <camp::idx_t Arg0, camp::idx_t Arg1, typename... EnclosedStmts, typename Types>
-struct StatementExecutor<statement::Collapse<omp_parallel_collapse_exec,
+struct StatementExecutor<statement::Collapse<hpx_parallel_collapse_exec,
                                              ArgList<Arg0, Arg1>,
                                              EnclosedStmts...>, Types> {
 
@@ -57,9 +60,13 @@ struct StatementExecutor<statement::Collapse<omp_parallel_collapse_exec,
   template <typename Data>
   static RAJA_INLINE void exec(Data&& data)
   {
-    using namespace hpx::parallel::util::range;
+    const auto l0 = segment_length<Arg0>(data);
+    const auto l1 = segment_length<Arg1>(data);
 
-    const auto len = segment_length<Arg0*Arg1>(data);
+    auto i0 = l0;
+    auto i1 = l1;
+
+    const auto len = l0 * l1;
 
     std::shared_ptr<Data> data_ptr(&data);
     auto privatizer = thread_privatize(data_ptr);
@@ -68,13 +75,15 @@ struct StatementExecutor<statement::Collapse<omp_parallel_collapse_exec,
     using NewTypes0 = setSegmentTypeFromData<Types, Arg0, Data>;
     using NewTypes1 = setSegmentTypeFromData<NewTypes0, Arg1, Data>;
 
-    using par_t = decltype(hpx::execution::par);
-    range<iter_t> rng(0, len);
+    auto rng = hpx::util::detail::make_counting_shape(len);
 
-    hpx::foreach(std::forward<par_t>(hpx::execution::par),
+    hpx::foreach(hpx::execution::par,
         std::begin(rng), std::end(rng), [&](const auto i) {
+            const auto x = i / l1;
+            const auto y = i % l1;
             auto& private_data = privatizer.get_priv();
-            private_data.template assign_offset<Arg0*Arg1>(i);
+            private_data.template assign_offset<Arg0>(x);
+            private_data.template assign_offset<Arg1>(y);
             execute_statement_list<camp::list<EnclosedStmts...>, NewTypes1>(private_data);
         }
     );
@@ -86,7 +95,7 @@ template <camp::idx_t Arg0,
           camp::idx_t Arg2,
           typename... EnclosedStmts,
           typename Types>
-struct StatementExecutor<statement::Collapse<omp_parallel_collapse_exec,
+struct StatementExecutor<statement::Collapse<hpx_parallel_collapse_exec,
                                              ArgList<Arg0, Arg1, Arg2>,
                                              EnclosedStmts...>, Types> {
 
@@ -94,9 +103,14 @@ struct StatementExecutor<statement::Collapse<omp_parallel_collapse_exec,
   template <typename Data>
   static RAJA_INLINE void exec(Data&& data)
   {
-    using namespace hpx::parallel::util::range;
+    const auto l0 = segment_length<Arg0>(data);
+    const auto l1 = segment_length<Arg1>(data);
+    const auto l2 = segment_length<Arg2>(data);
+    auto i0 = l0;
+    auto i1 = l1;
+    auto i2 = l2;
 
-    const auto len = segment_length<Arg0*Arg1*Arg2>(data);
+    const auto len = l0 * l1 * l2;
 
     std::shared_ptr<Data> data_ptr(&data);
     auto privatizer = thread_privatize(data_ptr);
@@ -106,13 +120,20 @@ struct StatementExecutor<statement::Collapse<omp_parallel_collapse_exec,
     using NewTypes1 = setSegmentTypeFromData<NewTypes0, Arg1, Data>;
     using NewTypes2 = setSegmentTypeFromData<NewTypes1, Arg2, Data>;
 
-    using par_t = decltype(hpx::execution::par);
-    range<iter_t> rng(0, len);
+    auto rng = hpx::util::detail::make_counting_shape(len);
 
-    hpx::foreach(std::forward<par_t>(hpx::execution::par),
+    const auto YZ = l1 * l2;
+
+    hpx::foreach(hpx::execution::par,
         std::begin(rng), std::end(rng), [&](const auto i) {
+            const auto modiYZ = i % YZ;
+            const auto z = modiYZ % l2;
+            const auto y = modiYZ / l2;
+            const auto x = i / YZ; 
             auto& private_data = privatizer.get_priv();
-            private_data.template assign_offset<Arg0*Arg1*Arg2>(i);
+            private_data.template assign_offset<Arg0>(x);
+            private_data.template assign_offset<Arg1>(y);
+            private_data.template assign_offset<Arg2>(z);
             execute_statement_list<camp::list<EnclosedStmts...>, NewTypes2>(private_data);
         }
     );
@@ -124,6 +145,6 @@ struct StatementExecutor<statement::Collapse<omp_parallel_collapse_exec,
 
 #undef RAJA_COLLAPSE
 
-#endif  // closing endif for RAJA_ENABLE_OPENMP guard
+#endif  // closing endif for RAJA_ENABLE_HPX guard
 
 #endif  // closing endif for header file include guard

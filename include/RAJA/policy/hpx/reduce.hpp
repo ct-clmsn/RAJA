@@ -29,7 +29,7 @@
 #include <vector>
 #include <mutex>
 
-#include <hpx.hpp>
+#include <hpx/modules/synchronization.hpp>
 
 #include "RAJA/util/types.hpp"
 

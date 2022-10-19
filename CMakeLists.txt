@@ -58,7 +58,7 @@ option(ENABLE_ROCTX "Build with ENABLE_ROCTX support" Off)
 
 option(ENABLE_TBB "Build TBB support" Off)
 option(ENABLE_TARGET_OPENMP "Build OpenMP on target device support" Off)
-option(ENABLE_TARGET_HPX "Build HPX support" Off)
+option(ENABLE_HPX "Build HPX support" Off)
 option(ENABLE_CLANG_CUDA "Use Clang's native CUDA support" Off)
 option(ENABLE_SYCL "Build SYCL support" Off)
 option(ENABLE_EXTERNAL_CUB "Use an external cub" Off)
@@ -88,7 +88,7 @@ set(BLT_EXPORT_THIRDPARTY ON CACHE BOOL "")
 
 cmake_minimum_required(VERSION 3.9)
 
-if (ENABLE_TARGET_HPX)
+if (ENABLE_HPX)
   if(NOT HPX_DIR AND HPX_ROOT)
     set(HPX_DIR ${HPX_ROOT}/lib/cmake/HPX)
   endif()

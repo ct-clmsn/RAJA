@@ -24,7 +24,7 @@
 #include <functional>
 #include <iterator>
 
-#include <omp.h>
+#include <hpx/parallel/algorithms/sort.hpp>
 
 #include "RAJA/util/macros.hpp"
 
@@ -56,7 +56,7 @@ void sort(Sorter sorter,
           Iter end,
           Compare comp)
 {
-    hpx::parallel::algorithms::sort(begin, end, comp);
+    hpx::parallel::algorithms::sort(hpx::execution::par, begin, end, comp);
 }
 
 } // namespace hpx

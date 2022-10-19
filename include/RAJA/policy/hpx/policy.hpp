@@ -19,6 +19,8 @@
 #define policy_hpx_HPP
 
 #include <type_traits>
+
+#include <hpx/local/execution.hpp>
 #include <hpx/local/barrier.hpp>
 
 #include "RAJA/policy/PolicyBase.hpp"

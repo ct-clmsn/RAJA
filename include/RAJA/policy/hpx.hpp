@@ -25,7 +25,10 @@
 
 #if defined(RAJA_ENABLE_HPX)
 
-#include <hpx.hpp>
+#include <hpx/config.hpp>
+#if !defined(HPX_COMPUTE_DEVICE_CODE)
+#include <hpx/algorithm.hpp>
+#include <hpx/hpx_main.hpp>
 #include <iostream>
 #include <thread>
 

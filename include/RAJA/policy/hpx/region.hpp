@@ -8,7 +8,7 @@
 #ifndef RAJA_region_hpx_HPP
 #define RAJA_region_hpx_HPP
 
-#include <hpx/parallel/task_block.hpp>
+#include <hpx/local/task_block.hpp>
 
 namespace RAJA
 {

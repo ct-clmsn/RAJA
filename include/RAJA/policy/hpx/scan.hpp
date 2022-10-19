@@ -26,7 +26,8 @@
 #include <type_traits>
 #include <vector>
 
-#include <hpx.hpp>
+#include <hpx/parallel/algorithms/exclusive_scan.hpp>
+#include <hpx/parallel/algorithms/inclusive_scan.hpp>
 
 #include "RAJA/policy/hpx/policy.hpp"
 #include "RAJA/policy/loop/scan.hpp"

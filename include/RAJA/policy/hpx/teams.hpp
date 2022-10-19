@@ -18,6 +18,9 @@
 #ifndef RAJA_pattern_teams_openmp_HPP
 #define RAJA_pattern_teams_openmp_HPP
 
+#include <hpx/local/execution.hpp>
+#include <hpx/parallel/algorithms/for_each.hpp>
+
 #include "RAJA/pattern/teams/teams_core.hpp"
 #include "RAJA/policy/openmp/policy.hpp"
 
@@ -303,22 +306,29 @@ struct LoopExecute<hpx_parallel_nested_for_exec, SEGMENT> {
       SEGMENT const &segment1,
       BODY const &body)
   {
-
     const int len1 = segment1.end() - segment1.begin();
     const int len0 = segment0.end() - segment0.begin();
+    auto i0 = len0;
+    auto i1 = len1;
+
+    const auto len = len0 * len1;
 
     RAJA::region<RAJA::hpx_parallel_region>([&]() {
       using RAJA::internal::thread_privatize;
       auto loop_body = thread_privatize(body);
 
-#pragma hpx for RAJA_COLLAPSE(2)
-      for (int j = 0; j < len1; j++) {
-        for (int i = 0; i < len0; i++) {
+      auto rng = hpx::util::detail::make_counting_shape(len);
 
-          loop_body.get_priv()(*(segment0.begin() + i),
-                               *(segment1.begin() + j));
-        }
-      }
+      hpx::foreach(hpx::execution::par,
+          std::begin(rng), std::end(rng), [&](const auto i) {
+              const auto x = i / len1;
+              const auto y = i % len1;
+
+              loop_body.get_priv()(*(segment0.begin() + x),
+                                   *(segment1.begin() + y),
+                                   x, y);
+          }
+      );
     });
   }
 
@@ -334,21 +344,31 @@ struct LoopExecute<hpx_parallel_nested_for_exec, SEGMENT> {
     const int len2 = segment2.end() - segment2.begin();
     const int len1 = segment1.end() - segment1.begin();
     const int len0 = segment0.end() - segment0.begin();
+    auto i0 = len0;
+    auto i1 = len1;
+    auto i2 = len2;
+    const auto len = len0 * len1 * len2;
 
     RAJA::region<RAJA::hpx_parallel_region>([&]() {
+      auto rng = hpx::util::detail::make_counting_shape(len);
+      const auto YZ = len1 * len2;
+
       using RAJA::internal::thread_privatize;
       auto loop_body = thread_privatize(body);
 
-#pragma hpx for RAJA_COLLAPSE(3)
-      for (int k = 0; k < len2; k++) {
-        for (int j = 0; j < len1; j++) {
-          for (int i = 0; i < len0; i++) {
-            loop_body.get_priv()(*(segment0.begin() + i),
-                                 *(segment1.begin() + j),
-                                 *(segment2.begin() + k));
+      hpx::foreach(hpx::execution::par,
+          std::begin(rng), std::end(rng), [&](const auto i) {
+              const auto modiYZ = i % YZ;
+              const auto z = modiYZ % l2;
+              const auto y = modiYZ / l2;
+              const auto x = i / YZ; 
+
+              loop_body.get_priv()(*(segment0.begin() + x),
+                                   *(segment1.begin() + y),
+                                   *(segment2.begin() + z),
+                                   x, y, z);
           }
-        }
-      }
+      );
     });
   }
 };
@@ -367,22 +387,28 @@ struct LoopICountExecute<hpx_parallel_nested_for_exec, SEGMENT> {
 
     const int len1 = segment1.end() - segment1.begin();
     const int len0 = segment0.end() - segment0.begin();
+    auto i0 = len0;
+    auto i1 = len1;
+
+    const auto len = len0 * len1;
 
     RAJA::region<RAJA::hpx_parallel_region>([&]() {
       using RAJA::internal::thread_privatize;
       auto loop_body = thread_privatize(body);
 
-#pragma hpx for RAJA_COLLAPSE(2)
-      for (int j = 0; j < len1; j++) {
-        for (int i = 0; i < len0; i++) {
+      auto rng = hpx::util::detail::make_counting_shape(len);
 
-          loop_body.get_priv()(*(segment0.begin() + i),
-                               *(segment1.begin() + j),
-                               i,
-                               j);
-        }
-      }
-    });
+      hpx::foreach(hpx::execution::par,
+          std::begin(rng), std::end(rng), [&](const auto i) {
+              const auto x = i / len1;
+              const auto y = i % len1;
+
+              loop_body.get_priv()(*(segment0.begin() + x),
+                                   *(segment1.begin() + y),
+                                   x,
+                                   y);
+          }
+      );
   }
 
   template <typename BODY>
@@ -397,24 +423,32 @@ struct LoopICountExecute<hpx_parallel_nested_for_exec, SEGMENT> {
     const int len2 = segment2.end() - segment2.begin();
     const int len1 = segment1.end() - segment1.begin();
     const int len0 = segment0.end() - segment0.begin();
+    auto i0 = len0;
+    auto i1 = len1;
+    auto i2 = len2;
+    const auto len = len0 * len1 * len2;
 
     RAJA::region<RAJA::hpx_parallel_region>([&]() {
+      auto rng = hpx::util::detail::make_counting_shape(len);
+      const auto YZ = len1 * len2;
+
       using RAJA::internal::thread_privatize;
       auto loop_body = thread_privatize(body);
 
-#pragma hpx for RAJA_COLLAPSE(3)
-      for (int k = 0; k < len2; k++) {
-        for (int j = 0; j < len1; j++) {
-          for (int i = 0; i < len0; i++) {
-            loop_body.get_priv()(*(segment0.begin() + i),
-                                 *(segment1.begin() + j),
-                                 *(segment2.begin() + k),
-                                 i,
-                                 j,
-                                 k);
+      hpx::foreach(hpx::execution::par,
+          std::begin(rng), std::end(rng), [&](const auto i) {
+              const auto modiYZ = i % YZ;
+              const auto z = modiYZ % l2;
+              const auto y = modiYZ / l2;
+              const auto x = i / YZ; 
+              loop_body.get_priv()(*(segment0.begin() + x),
+                                   *(segment1.begin() + y),
+                                   *(segment2.begin() + z),
+                                   x,
+                                   y,
+                                   z);
           }
-        }
-      }
+      );
     });
   }
 };
