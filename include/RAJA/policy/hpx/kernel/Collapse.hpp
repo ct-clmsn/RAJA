@@ -68,8 +68,7 @@ struct StatementExecutor<statement::Collapse<hpx_parallel_collapse_exec,
 
     const auto len = l0 * l1;
 
-    std::shared_ptr<Data> data_ptr(&data);
-    auto privatizer = thread_privatize(data_ptr);
+    auto privatizer = thread_privatize(data);
 
     // Set the argument types for this loop
     using NewTypes0 = setSegmentTypeFromData<Types, Arg0, Data>;
@@ -112,8 +111,7 @@ struct StatementExecutor<statement::Collapse<hpx_parallel_collapse_exec,
 
     const auto len = l0 * l1 * l2;
 
-    std::shared_ptr<Data> data_ptr(&data);
-    auto privatizer = thread_privatize(data_ptr);
+    auto privatizer = thread_privatize(data);
 
     // Set the argument types for this loop
     using NewTypes0 = setSegmentTypeFromData<Types, Arg0, Data>;

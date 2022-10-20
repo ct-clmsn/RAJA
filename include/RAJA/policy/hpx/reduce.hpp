@@ -29,6 +29,8 @@
 #include <vector>
 #include <mutex>
 
+#include <hpx/local/shared_mutex.hpp>
+#include <hpx/local/thread.hpp>
 #include <hpx/modules/synchronization.hpp>
 
 #include "RAJA/util/types.hpp"
@@ -45,31 +47,51 @@ namespace detail
 {
 template <typename T, typename Reduce>
 class ReduceHPX
-    : public reduce::detail::BaseCombinable<T, Reduce, ReduceHPX<T, Reduce>>
 {
-  using Base = reduce::detail::BaseCombinable<T, Reduce, ReduceHPX>;
+private:
+  static ::hpx::mutex mtx_;
+
+  //! HPX native per-thread container
+  std::shared_ptr<T> data;
 
 public:
-  using Base::Base;
-  //! prohibit compiler-generated default ctor
-  ReduceHPX() = delete;
+  //! default constructor calls the reset method
+  ReduceHPX() { reset(T(), T()); }
 
-  ~ReduceHPX()
+  //! constructor requires a default value for the reducer
+  explicit ReduceHPX(T init_val, T initializer)
   {
-    if (Base::parent) {
-      std::lock_guard<::hpx::spinlock> l(mtx_);
-      Reduce()(Base::parent->local(), Base::my_data);
-      Base::my_data = Base::identity;
-    }
+    reset(init_val, initializer);
   }
 
-private:
-  static ::hpx::spinlock mtx_;
+  void reset(T init_val, T initializer)
+  {
+    data = std::shared_ptr<T>(
+        std::make_shared<T>( initializer ));
+    (*data) = init_val;
+  }
 
+  /*!
+   *  \return the calculated reduced value
+   */
+  T get() const { return local(); }
+
+  /*!
+   *  \return update the local value
+   */
+  void combine(const T& other) {
+     std::unique_lock<::hpx::mutex> l{mtx_};
+     Reduce{}(*(data), other);
+  }
+
+  /*!
+   *  \return reference to the local value
+   */
+  T& local() const { return (*data); }
 };
 
 template <typename T, typename Reduce>
-::hpx::spinlock ReduceHPX<T, Reduce>::mtx_ = ::hpx::spinlock{};
+::hpx::mutex ReduceHPX<T, Reduce>::mtx_{};
 
 }  // namespace detail
 
