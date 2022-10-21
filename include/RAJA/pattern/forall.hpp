@@ -219,7 +219,11 @@ RAJA_INLINE resources::EventProxy<Res> forall_Icount(Res r,
 {
   // no need for icount variant here
   auto segIterRes = resources::get_resource<SegmentIterPolicy>::type::get_default();
+#if defined(RAJA_ENABLE_HPX)
+  wrap::forall(segIterRes, SegmentIterPolicy(), iset, [&iset, &loop_body, &r](int segID) {
+#else
   wrap::forall(segIterRes, SegmentIterPolicy(), iset, [=, &r](int segID) {
+#endif
     iset.segmentCall(segID,
                      detail::CallForallIcount(iset.getStartingIcount(segID)),
                      SegmentExecPolicy(),
@@ -241,7 +245,11 @@ RAJA_INLINE resources::EventProxy<Res> forall(Res r,
                                          LoopBody loop_body)
 {
   auto segIterRes = resources::get_resource<SegmentIterPolicy>::type::get_default();
+#if defined(RAJA_ENABLE_HPX)
+  wrap::forall(segIterRes, SegmentIterPolicy(), iset, [&loop_body, &iset, &r](int segID) {
+#else
   wrap::forall(segIterRes, SegmentIterPolicy(), iset, [=, &r](int segID) {
+#endif
     iset.segmentCall(segID, detail::CallForall{}, SegmentExecPolicy(), loop_body, r);
   });
   return RAJA::resources::EventProxy<Res>(r);

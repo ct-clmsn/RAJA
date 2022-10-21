@@ -61,10 +61,8 @@ RAJA_INLINE resources::EventProxy<resources::Host> forall_impl(resources::Host h
                                                     Iterable&& iter,
                                                     Func&& loop_body)
 {
-  RAJA::region<RAJA::hpx_parallel_region>([&]() {
-    using RAJA::internal::thread_privatize;
-    auto body = thread_privatize(loop_body);
-    forall_impl(host_res, InnerPolicy{}, iter, body.get_priv());
+  RAJA::region<RAJA::hpx_parallel_region>([&host_res, &iter, &loop_body]() {
+    forall_impl(host_res, InnerPolicy{}, iter, loop_body);
   });
   return resources::EventProxy<resources::Host>(host_res);
 }
@@ -88,7 +86,7 @@ namespace internal
                                Func&& loop_body)
   {
     RAJA_EXTRACT_BED_IT(iter);
-    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [&](decltype(distance_it) i) {
+    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [&loop_body, &begin_it](decltype(distance_it) i) {
       loop_body(begin_it[i]);
     });
   }
@@ -103,7 +101,7 @@ namespace internal
                                Func&& loop_body)
   {
     RAJA_EXTRACT_BED_IT(iter);
-    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [&](decltype(distance_it) i) {
+    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [&loop_body, &begin_it](decltype(distance_it) i) {
       loop_body(begin_it[i]);
     });
   }
@@ -118,7 +116,7 @@ namespace internal
                                Func&& loop_body)
   {
     RAJA_EXTRACT_BED_IT(iter);
-    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [&](decltype(distance_it) i) {
+    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [&loop_body, &begin_it](decltype(distance_it) i) {
       loop_body(begin_it[i]);
     });
   }
@@ -133,7 +131,7 @@ namespace internal
                                Func&& loop_body)
   {
     RAJA_EXTRACT_BED_IT(iter);
-    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [&](decltype(distance_it) i) {
+    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [&loop_body, &begin_it](decltype(distance_it) i) {
       loop_body(begin_it[i]);
     });
   }
@@ -148,7 +146,7 @@ namespace internal
                                Func&& loop_body)
   {
     RAJA_EXTRACT_BED_IT(iter);
-    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [&](decltype(distance_it) i) {
+    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [&loop_body, &begin_it](decltype(distance_it) i) {
       loop_body(begin_it[i]);
     });
   }
@@ -163,7 +161,7 @@ namespace internal
                                Func&& loop_body)
   {
     RAJA_EXTRACT_BED_IT(iter);
-    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [&](decltype(distance_it) i) {
+    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [&loop_body, &begin_it](decltype(distance_it) i) {
       loop_body(begin_it[i]);
     });
   }
@@ -178,7 +176,7 @@ namespace internal
                                Func&& loop_body)
   {
     RAJA_EXTRACT_BED_IT(iter);
-    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [&](decltype(distance_it) i) {
+    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [&loop_body, &begin_it](decltype(distance_it) i) {
       loop_body(begin_it[i]);
     });
   }
@@ -192,7 +190,7 @@ namespace internal
                                Func&& loop_body)
   {
     RAJA_EXTRACT_BED_IT(iter);
-    ::hpx::for_each(rt.exec, begin_it, end_it, [&](decltype(distance_it) i) {
+    ::hpx::for_each(rt.exec, begin_it, end_it, [&loop_body, &begin_it](decltype(distance_it) i) {
       loop_body(begin_it[i]);
     });
   }
@@ -221,7 +219,7 @@ namespace internal
                                Func&& loop_body)
   {
     RAJA_EXTRACT_BED_IT(iter);
-    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [&](decltype(distance_it) i) {
+    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [&loop_body, &begin_it](decltype(distance_it) i) {
       loop_body(begin_it[i]);
     });
   }
@@ -236,7 +234,7 @@ namespace internal
                                Func&& loop_body)
   {
     RAJA_EXTRACT_BED_IT(iter);
-    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [&](decltype(distance_it) i) {
+    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [&loop_body, &begin_it](decltype(distance_it) i) {
       loop_body(begin_it[i]);
     });
   }
@@ -251,7 +249,7 @@ namespace internal
                                Func&& loop_body)
   {
     RAJA_EXTRACT_BED_IT(iter);
-    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [&](decltype(distance_it) i) {
+    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [&loop_body, &begin_it](decltype(distance_it) i) {
       loop_body(begin_it[i]);
     });
   }
