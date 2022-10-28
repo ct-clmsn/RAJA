@@ -44,6 +44,7 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/thirdparty" ${CMAKE_MODULE_PA
 
 # Build options
 set(ENABLE_OPENMP On CACHE BOOL "Build OpenMP support")
+set(ENABLE_HPX Off CACHE BOOL "Build HPX support")
 set(ENABLE_CUDA Off CACHE BOOL "Build CUDA support")
 set(ENABLE_COPY_HEADERS Off CACHE BOOL "")
 set(ENABLE_WARNINGS_AS_ERRORS Off CACHE BOOL "")
@@ -62,6 +63,7 @@ option(ENABLE_HPX "Build HPX support" Off)
 option(ENABLE_CLANG_CUDA "Use Clang's native CUDA support" Off)
 option(ENABLE_SYCL "Build SYCL support" Off)
 option(ENABLE_EXTERNAL_CUB "Use an external cub" Off)
+option(ENABLE_EXTERNAL_CAMP "Use an external camp" Off)
 option(ENABLE_EXTERNAL_ROCPRIM "Use an external rocPRIM" Off)
 
 option(ENABLE_REPRODUCERS "Build issue reproducers" Off)
@@ -96,6 +98,10 @@ if (ENABLE_HPX)
   if(NOT HPX_DIR AND EXISTS "$ENV{HPX_DIR}")
     set(HPX_DIR $ENV{HPX_DIR})
   endif()
+
+  set(ENABLE_OPENMP OFF)
+  set(RAJA_ENABLE_OPENMP OFF)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-openmp")
 endif()
 
 if (ENABLE_CUDA)
@@ -217,6 +223,8 @@ set (raja_depends)
 if (ENABLE_OPENMP)
   set (raja_depends
     openmp)
+else()
+  set(CMAKE_DISABLE_FIND_PACKAGE_OPENMP ON)
 endif()
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 17)
@@ -295,6 +303,12 @@ if (RAJA_ENABLE_DESUL_ATOMICS)
     desul_atomics)
 endif ()
 
+if(NOT ENABLE_EXTERNAL_CAMP)
+  set(EXTERNAL_CAMP_SOURCE_DIR "" CACHE FILEPATH "build with a specific external
+camp source repository")
+  message(STATUS "Using RAJA CAMP submodule.")
+  add_subdirectory(tpl/camp)
+else()
 if (NOT TARGET camp)
   set(EXTERNAL_CAMP_SOURCE_DIR "" CACHE FILEPATH "build with a specific external
 camp source repository")
@@ -314,6 +328,7 @@ camp source repository")
     endif(NOT camp_FOUND)
   endif (EXTERNAL_CAMP_SOURCE_DIR)
 endif (NOT TARGET camp)
+endif()
 
 set (raja_defines)
 
@@ -328,7 +343,6 @@ blt_add_library(
   SOURCES ${raja_sources}
   DEPENDS_ON ${raja_depends} camp ${CMAKE_DL_LIBS}
   DEFINES ${raja_defines})
-
 
 install(TARGETS RAJA
   EXPORT RAJA
@@ -368,7 +382,6 @@ install(FILES
   include/RAJA/module.modulemap
   include/RAJA/module.private.modulemap
   DESTINATION "include/RAJA/")
-
 
 # Setup internal RAJA configuration options
 include(cmake/SetupRajaConfig.cmake)

@@ -12,6 +12,11 @@
 
 #include "memoryManager.hpp"
 
+#if defined(RAJA_ENABLE_HPX)
+#include <hpx/config.hpp>
+#include <hpx/hpx_main.hpp>
+#endif
+
 #include "RAJA/RAJA.hpp"
 
 /*
@@ -110,7 +115,7 @@ int main(int RAJA_UNUSED_ARG(argc), char** RAJA_UNUSED_ARG(argv[]))
 //----------------------------------------------------------------------------//
 
 #if defined(RAJA_ENABLE_HPX)
-
+{
   std::cout << "\n\n Running RAJA HPX binning" << std::endl;
   std::memset(bins, 0, M * sizeof(int));
 
@@ -136,7 +141,7 @@ int main(int RAJA_UNUSED_ARG(argc), char** RAJA_UNUSED_ARG(argv[]))
   });
 
   printBins(bins, M);
-
+}
 #endif
 
 //----------------------------------------------------------------------------//

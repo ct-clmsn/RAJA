@@ -288,6 +288,21 @@ RAJA_INLINE resources::EventProxy<resources::Host> forall_impl(resources::Host h
   return resources::EventProxy<resources::Host>(host_res);
 }
 
+template <typename SEQ_POLICY_T, typename SEG_EXEC_POLICY_T, typename LOOP_BODY, typename ...
+SEG_TYPES>
+RAJA_INLINE void forall(
+    ExecPolicy<SEQ_POLICY_T, SEG_EXEC_POLICY_T>,
+    const TypedIndexSet<SEG_TYPES ...>& iset,
+    LOOP_BODY loop_body)
+{
+  int num_seg = iset.getNumSegments();
+  auto irange = ::hpx::util::detail::make_counting_shape(num_seg);
+
+  ::hpx::for_each(::hpx::execution::seq, ::hpx::util::begin(irange), ::hpx::util::end(irange), [&iset, &loop_body](const int isi) {
+      iset.segmentCall(isi, loop_body); 
+  });  // iterate over segments of index set
+}
+
 }  // namespace hpx
 
 }  // namespace policy

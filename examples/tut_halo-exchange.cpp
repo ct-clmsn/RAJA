@@ -14,6 +14,11 @@
 
 #include "memoryManager.hpp"
 
+#if defined(RAJA_ENABLE_HPX)
+#include <hpx/config.hpp>
+#include <hpx/hpx_main.hpp>
+#endif
+
 #include "RAJA/RAJA.hpp"
 #include "RAJA/util/Timer.hpp"
 
@@ -732,6 +737,250 @@ int main(int argc, char **argv)
 
     using workgroup_policy = RAJA::WorkGroupPolicy <
                                  RAJA::omp_work,
+                                 RAJA::ordered,
+                                 RAJA::ragged_array_of_objects >;
+
+    using workpool = RAJA::WorkPool< workgroup_policy,
+                                     int,
+                                     RAJA::xargs<>,
+                                     memory_manager_allocator<char> >;
+
+    using workgroup = RAJA::WorkGroup< workgroup_policy,
+                                       int,
+                                       RAJA::xargs<>,
+                                       memory_manager_allocator<char> >;
+
+    using worksite = RAJA::WorkSite< workgroup_policy,
+                                     int,
+                                     RAJA::xargs<>,
+                                     memory_manager_allocator<char> >;
+    // _halo_exchange_openmp_workgroup_policies_end
+
+    std::vector<double*> buffers(num_neighbors, nullptr);
+
+    for (int l = 0; l < num_neighbors; ++l) {
+
+      int buffer_len = num_vars * pack_index_list_lengths[l];
+
+      buffers[l] = memoryManager::allocate<double>(buffer_len);
+
+    }
+
+    workpool pool_pack  (memory_manager_allocator<char>{});
+    workpool pool_unpack(memory_manager_allocator<char>{});
+
+    for (int c = 0; c < num_cycles; ++c ) {
+      timer.start();
+      {
+
+      // set vars
+      for (int v = 0; v < num_vars; ++v) {
+
+        double* var = vars[v];
+
+        RAJA::forall<forall_policy>(range_segment(0, var_size), [=] (int i) {
+          var[i] = i + v;
+        });
+      }
+
+      // _halo_exchange_openmp_workgroup_packing_start
+      for (int l = 0; l < num_neighbors; ++l) {
+
+        double* buffer = buffers[l];
+        int* list = pack_index_lists[l];
+        int  len  = pack_index_list_lengths[l];
+
+        // pack
+        for (int v = 0; v < num_vars; ++v) {
+
+          double* var = vars[v];
+
+          pool_pack.enqueue(range_segment(0, len), [=] (int i) {
+            buffer[i] = var[list[i]];
+          });
+
+          buffer += len;
+        }
+      }
+
+      workgroup group_pack = pool_pack.instantiate();
+
+      worksite site_pack = group_pack.run();
+
+      // send all messages
+      // _halo_exchange_openmp_workgroup_packing_end
+
+      // _halo_exchange_openmp_workgroup_unpacking_start
+      // recv all messages
+
+      for (int l = 0; l < num_neighbors; ++l) {
+
+        double* buffer = buffers[l];
+        int* list = unpack_index_lists[l];
+        int  len  = unpack_index_list_lengths[l];
+
+        // unpack
+        for (int v = 0; v < num_vars; ++v) {
+
+          double* var = vars[v];
+
+          pool_unpack.enqueue(range_segment(0, len), [=] (int i) {
+            var[list[i]] = buffer[i];
+          });
+
+          buffer += len;
+        }
+      }
+
+      workgroup group_unpack = pool_unpack.instantiate();
+
+      worksite site_unpack = group_unpack.run();
+      // _halo_exchange_openmp_workgroup_unpacking_end
+
+      }
+      timer.stop();
+
+      RAJA::Timer::ElapsedType tCycle = timer.elapsed();
+      if (tCycle < minCycle) minCycle = tCycle;
+      timer.reset();
+    }
+
+    for (int l = 0; l < num_neighbors; ++l) {
+
+      memoryManager::deallocate(buffers[l]);
+
+    }
+
+    std::cout<< "\tmin cycle run time : " << minCycle << " seconds" << std::endl;
+
+    // check results against reference copy
+    checkResult(vars, vars_ref, var_size, num_vars);
+    //printResult(vars, var_size, num_vars);
+  }
+
+#endif
+
+//----------------------------------------------------------------------------//
+
+#if defined(RAJA_ENABLE_HPX)
+
+//----------------------------------------------------------------------------//
+// Separate packing/unpacking loops using forall
+//----------------------------------------------------------------------------//
+  {
+    std::cout << "\n Running RAJA HPX forall halo exchange...\n";
+
+    double minCycle = std::numeric_limits<double>::max();
+
+    // _halo_exchange_openmp_forall_policies_start
+    using forall_policy = RAJA::hpx_parallel_for_exec;
+    // _halo_exchange_openmp_forall_policies_end
+
+    std::vector<double*> buffers(num_neighbors, nullptr);
+
+    for (int l = 0; l < num_neighbors; ++l) {
+
+      int buffer_len = num_vars * pack_index_list_lengths[l];
+
+      buffers[l] = memoryManager::allocate<double>(buffer_len);
+
+    }
+
+    for (int c = 0; c < num_cycles; ++c ) {
+      timer.start();
+      {
+
+      // set vars
+      for (int v = 0; v < num_vars; ++v) {
+
+        double* var = vars[v];
+
+        RAJA::forall<forall_policy>(range_segment(0, var_size), [=] (int i) {
+          var[i] = i + v;
+        });
+      }
+
+      // _halo_exchange_openmp_forall_packing_start
+      for (int l = 0; l < num_neighbors; ++l) {
+
+        double* buffer = buffers[l];
+        int* list = pack_index_lists[l];
+        int  len  = pack_index_list_lengths[l];
+
+        // pack
+        for (int v = 0; v < num_vars; ++v) {
+
+          double* var = vars[v];
+
+          RAJA::forall<forall_policy>(range_segment(0, len), [=] (int i) {
+            buffer[i] = var[list[i]];
+          });
+
+          buffer += len;
+        }
+
+        // send single message
+      }
+      // _halo_exchange_openmp_forall_packing_end
+
+      // _halo_exchange_openmp_forall_unpacking_start
+      for (int l = 0; l < num_neighbors; ++l) {
+
+        // recv single message
+
+        double* buffer = buffers[l];
+        int* list = unpack_index_lists[l];
+        int  len  = unpack_index_list_lengths[l];
+
+        // unpack
+        for (int v = 0; v < num_vars; ++v) {
+
+          double* var = vars[v];
+
+          RAJA::forall<forall_policy>(range_segment(0, len), [=] (int i) {
+            var[list[i]] = buffer[i];
+          });
+
+          buffer += len;
+        }
+      }
+      // _halo_exchange_openmp_forall_unpacking_end
+
+      }
+      timer.stop();
+
+      RAJA::Timer::ElapsedType tCycle = timer.elapsed();
+      if (tCycle < minCycle) minCycle = tCycle;
+      timer.reset();
+    }
+
+    for (int l = 0; l < num_neighbors; ++l) {
+
+      memoryManager::deallocate(buffers[l]);
+
+    }
+
+    std::cout<< "\tmin cycle run time : " << minCycle << " seconds" << std::endl;
+
+    // check results against reference copy
+    checkResult(vars, vars_ref, var_size, num_vars);
+    //printResult(vars, var_size, num_vars);
+  }
+
+
+//----------------------------------------------------------------------------//
+// RAJA::WorkGroup may allow effective parallelism across loops with HPX.
+//----------------------------------------------------------------------------//
+  {
+    std::cout << "\n Running RAJA HPX workgroup halo exchange...\n";
+
+    double minCycle = std::numeric_limits<double>::max();
+
+    // _halo_exchange_openmp_workgroup_policies_start
+    using forall_policy = RAJA::hpx_parallel_for_exec;
+
+    using workgroup_policy = RAJA::WorkGroupPolicy <
+                                 RAJA::hpx_work,
                                  RAJA::ordered,
                                  RAJA::ragged_array_of_objects >;
 

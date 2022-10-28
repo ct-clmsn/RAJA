@@ -36,8 +36,8 @@ macro(raja_add_executable)
   endif ()
 
   if (ENABLE_HPX)
-    list (APPEND arg_DEPENDS_ON HPX::hpx)
-    list (APPEND arg_DEPENDS_ON HPX::wrap_main)
+      list (APPEND arg_DEPENDS_ON HPX::hpx)
+      list (APPEND arg_DEPENDS_ON HPX::wrap_main)
   endif ()
 
   if (${arg_TEST})

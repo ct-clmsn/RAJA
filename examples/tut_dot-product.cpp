@@ -11,6 +11,11 @@
 
 #include "memoryManager.hpp"
 
+#if defined(RAJA_ENABLE_HPX)
+#include <hpx/config.hpp>
+#include <hpx/hpx_main.hpp>
+#endif
+
 #include "RAJA/RAJA.hpp"
 
 /*
@@ -137,21 +142,22 @@ int main(int RAJA_UNUSED_ARG(argc), char **RAJA_UNUSED_ARG(argv[]))
 //----------------------------------------------------------------------------//
 
 #if defined(RAJA_ENABLE_HPX)
+{
   std::cout << "\n Running RAJA HPX dot product...\n";
 
   // _rajaomp_dotprod_start
-  RAJA::ReduceSum<RAJA::hpx_reduce, double> ompdot(0.0);
+  RAJA::ReduceSum<RAJA::hpx_reduce, double> hpxdot(0.0);
 
-  RAJA::forall<RAJA::hpx_parallel_for_exec>(RAJA::RangeSegment(0, N), [=] (int i) { 
-    ompdot += a[i] * b[i]; 
+  RAJA::forall<RAJA::hpx_parallel_for_exec>(RAJA::RangeSegment(0, N), [&] (int i) { 
+    hpxdot += a[i] * b[i]; 
   });    
 
-  dot = ompdot.get();
-  // _rajaomp_dotprod_end
+  dot = hpxdot.get();
 
   std::cout << "\t (a, b) = " << dot << std::endl;
 
   checkResult(dot, dot_ref);
+}
 #endif
 
 //----------------------------------------------------------------------------//

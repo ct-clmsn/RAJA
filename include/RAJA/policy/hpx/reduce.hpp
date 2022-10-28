@@ -12,7 +12,7 @@
  */
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2016-21, Lawrence Livermore National Security, LLC
+// Copyright (c) 2022, Tactical Computing Labs, LLC
 // and RAJA project contributors. See the RAJA/LICENSE file for details.
 //
 // SPDX-License-Identifier: (BSD-3-Clause)
@@ -28,10 +28,6 @@
 #include <memory>
 #include <vector>
 #include <mutex>
-
-#include <hpx/local/shared_mutex.hpp>
-#include <hpx/local/thread.hpp>
-#include <hpx/modules/synchronization.hpp>
 
 #include "RAJA/util/types.hpp"
 
@@ -49,7 +45,7 @@ template <typename T, typename Reduce>
 class ReduceHPX
 {
 private:
-  static ::hpx::mutex mtx_;
+  static std::mutex mtx_;
 
   //! HPX native per-thread container
   std::shared_ptr<T> data;
@@ -80,7 +76,7 @@ public:
    *  \return update the local value
    */
   void combine(const T& other) {
-     std::unique_lock<::hpx::mutex> l{mtx_};
+     std::unique_lock<std::mutex> l{mtx_};
      Reduce{}(*(data), other);
   }
 
@@ -91,7 +87,7 @@ public:
 };
 
 template <typename T, typename Reduce>
-::hpx::mutex ReduceHPX<T, Reduce>::mtx_{};
+std::mutex ReduceHPX<T, Reduce>::mtx_{};
 
 }  // namespace detail
 

@@ -9,6 +9,11 @@
 #include <cstring>
 #include <iostream>
 
+#if defined(RAJA_ENABLE_HPX)
+#include <hpx/config.hpp>
+#include <hpx/hpx_main.hpp>
+#endif
+
 #include "RAJA/RAJA.hpp"
 
 /*
@@ -142,16 +147,18 @@ int main(int RAJA_UNUSED_ARG(argc), char **RAJA_UNUSED_ARG(argv[]))
 //----------------------------------------------------------------------------//
 
 #if defined(RAJA_ENABLE_HPX)
+
   std::cout << "\n Running RAJA HPX daxpy...\n";
    
   std::memcpy( a, a0, N * sizeof(double) );  
 
-  RAJA::forall<RAJA::hpx_parallel_for_exec>(RAJA::RangeSegment(0, N), [=] (int i) {
-    a[i] += b[i] * c;
+  RAJA::forall<RAJA::hpx_parallel_for_exec>(RAJA::RangeSegment(0, N), [&] (int i) {
+    a[i] += b[i] * b[i]; //c
   });
 
   checkResult(a, aref, N);
-//printResult(a, N); 
+//printResult(a, N);
+
 #endif
 
 //----------------------------------------------------------------------------//

@@ -13,6 +13,11 @@
 
 #include "memoryManager.hpp"
 
+#if defined(RAJA_ENABLE_HPX)
+#include <hpx/config.hpp>
+#include <hpx/hpx_main.hpp>
+#endif
+
 #include "RAJA/RAJA.hpp"
 
 #include "camp/resource.hpp"
@@ -294,6 +299,7 @@ int main(int RAJA_UNUSED_ARG(argc), char **RAJA_UNUSED_ARG(argv[]))
 //----------------------------------------------------------------------------//
 
 #if defined(RAJA_ENABLE_OPENMP)
+{
 //
 // Run the previous version in parallel (2 different ways) just for fun...
 //
@@ -315,10 +321,10 @@ int main(int RAJA_UNUSED_ARG(argc), char **RAJA_UNUSED_ARG(argv[]))
 
   checkResult(a, aref, N);
 //printResult(a, N);
-
+}
 
 //----------------------------------------------------------------------------//
-
+{
   std::cout << 
     "\n Running RAJA index set (2 RangeSegments, 1 ListSegment) daxpy\n" << 
     " (OpenMP parallel iteration over segments, sequential segment execution)...\n";
@@ -336,6 +342,51 @@ int main(int RAJA_UNUSED_ARG(argc), char **RAJA_UNUSED_ARG(argv[]))
 
   checkResult(a, aref, N);
 //printResult(a, N);
+#endif
+
+//----------------------------------------------------------------------------//
+
+#if defined(RAJA_ENABLE_HPX)
+//
+// Run the previous version in parallel (2 different ways) just for fun...
+//
+
+  std::cout << 
+    "\n Running RAJA index set (2 RangeSegments, 1 ListSegment) daxpy\n" << 
+    " (sequential iteration over segments, HPX parallel segment execution)...\n";
+
+  std::memcpy( a, a0, N * sizeof(double) );
+
+  // _raja_indexset_ompinnerpolicy_daxpy_start
+  using HPX_ISET_EXECPOL1 = RAJA::ExecPolicy<RAJA::seq_segit,
+                                             RAJA::hpx_parallel_for_exec>;
+  // _raja_indexset_ompinnerpolicy_daxpy_end
+
+  RAJA::forall<HPX_ISET_EXECPOL1>(is3, [&] (IdxType i) {
+    a[i] += b[i] * c;
+  });
+
+  checkResult(a, aref, N);
+
+//----------------------------------------------------------------------------//
+
+  std::cout << 
+    "\n Running RAJA index set (2 RangeSegments, 1 ListSegment) daxpy\n" << 
+    " (HPX parallel iteration over segments, sequential segment execution)...\n";
+
+  std::memcpy( a, a0, N * sizeof(double) );
+
+  // _raja_indexset_ompouterpolicy_daxpy_start
+  using HPX_ISET_EXECPOL2 = RAJA::ExecPolicy<RAJA::hpx_parallel_for_segit,
+                                             RAJA::seq_exec>;
+  // _raja_indexset_ompouterpolicy_daxpy_end
+
+  RAJA::forall<HPX_ISET_EXECPOL2>(is3, [&] (IdxType i) {
+    a[i] += b[i] * c;
+  });
+
+  checkResult(a, aref, N);
+
 #endif
 
 //----------------------------------------------------------------------------//

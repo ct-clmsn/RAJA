@@ -36,7 +36,6 @@
 #include "RAJA/util/plugins.hpp"
 #include "RAJA/util/Registry.hpp"
 
-
 //
 // Generic iteration templates require specializations defined
 // in the files included below.
@@ -61,6 +60,10 @@
 //
 #include "RAJA/policy/simd.hpp"
 
+#if defined(RAJA_ENABLE_HPX)
+#include "RAJA/policy/hpx.hpp"
+#endif
+
 #if defined(RAJA_ENABLE_TBB)
 #include "RAJA/policy/tbb.hpp"
 #endif
@@ -83,14 +86,6 @@
 #if defined(RAJA_ENABLE_TARGET_OPENMP)
 #include "RAJA/policy/openmp_target.hpp"
 #endif
-#endif
-
-#if defined(RAJA_ENABLE_HPX)
-
-#include <hpx/config.hpp>
-#include <hpx/hpx_main.hpp>
-
-#include "RAJA/policy/hpx.hpp"
 #endif
 
 #if defined(RAJA_ENABLE_DESUL_ATOMICS)
