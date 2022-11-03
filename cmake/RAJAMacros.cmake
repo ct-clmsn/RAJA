@@ -37,7 +37,6 @@ macro(raja_add_executable)
 
   if (ENABLE_HPX)
       list (APPEND arg_DEPENDS_ON HPX::hpx)
-      list (APPEND arg_DEPENDS_ON HPX::wrap_main)
   endif ()
 
   if (${arg_TEST})
@@ -55,7 +54,8 @@ macro(raja_add_executable)
     SOURCES ${arg_SOURCES}
     DEPENDS_ON ${arg_DEPENDS_ON}
     OUTPUT_DIR ${_output_dir}
-    )
+  )
+
 endmacro(raja_add_executable)
 
 macro(raja_add_plugin_library)
@@ -86,6 +86,10 @@ macro(raja_add_plugin_library)
 
   if (ENABLE_TBB)
     list (APPEND arg_DEPENDS_ON tbb)
+  endif ()
+
+  if(ENABLE_HPX)
+    list (APPEND arg_DEPENDS_ON HPX::component)
   endif ()
 
   blt_add_library(

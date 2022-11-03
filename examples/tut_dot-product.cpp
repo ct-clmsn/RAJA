@@ -11,9 +11,51 @@
 
 #include "memoryManager.hpp"
 
+//
+//  Function to check dot product result.
+//
+void checkResult(double compdot, double refdot);
+
 #if defined(RAJA_ENABLE_HPX)
+
 #include <hpx/config.hpp>
-#include <hpx/hpx_main.hpp>
+#include <hpx/hpx_init.hpp>
+
+int hpx_main(int argc, char ** argv) {
+    std::cout << "\n Running RAJA HPX dot product...\n";
+
+    const int N = 1000000;
+    double dot = 0.0;
+
+    std::vector<double> a(N), b(N);
+
+    for (int i = 0; i < N; ++i) {
+        a[i] = 1.0;
+        b[i] = 1.0;
+    }
+
+    for (int i = 0; i < N; ++i) {
+        dot += a[i] * b[i];
+    }
+
+    double dot_ref = dot;
+
+    // _rajaomp_dotprod_start
+    RAJA::ReduceSum<RAJA::hpx_reduce, double> hpxdot(0.0);
+
+    RAJA::forall<RAJA::hpx_parallel_for_exec>(RAJA::RangeSegment(0, N), [=] (int i) { 
+         hpxdot += a[i] * b[i]; 
+    });
+
+    dot = hpxdot.get();
+
+    std::cout << "\t (a, b) = " << dot << std::endl;
+
+    checkResult(dot, dot_ref);
+
+    return hpx::finalize();
+}
+
 #endif
 
 #include "RAJA/RAJA.hpp"
@@ -50,12 +92,7 @@ const int HIP_BLOCK_SIZE = 256;
 const int SYCL_BLOCK_SIZE = 256;
 #endif
 
-//
-//  Function to check dot product result.
-//
-void checkResult(double compdot, double refdot);
-
-int main(int RAJA_UNUSED_ARG(argc), char **RAJA_UNUSED_ARG(argv[]))
+int main(int argc, char ** argv)
 {
 
   std::cout << "\n\nRAJA vector dot product example...\n";
@@ -65,6 +102,7 @@ int main(int RAJA_UNUSED_ARG(argc), char **RAJA_UNUSED_ARG(argv[]))
   ::RAJA::sycl::detail::setQueue(memoryManager::sycl_res);
 #endif
 
+#if !defined(RAJA_ENABLE_HPX)
 //
 // Define vector length
 //
@@ -82,7 +120,6 @@ int main(int RAJA_UNUSED_ARG(argc), char **RAJA_UNUSED_ARG(argv[]))
   }
 
 //----------------------------------------------------------------------------//
-
 //
 // C-style dot product operation.
 //
@@ -118,7 +155,6 @@ int main(int RAJA_UNUSED_ARG(argc), char **RAJA_UNUSED_ARG(argv[]))
 
   checkResult(dot, dot_ref);
 
-
 //----------------------------------------------------------------------------//
 
 #if defined(RAJA_ENABLE_OPENMP)
@@ -137,27 +173,6 @@ int main(int RAJA_UNUSED_ARG(argc), char **RAJA_UNUSED_ARG(argv[]))
   std::cout << "\t (a, b) = " << dot << std::endl;
 
   checkResult(dot, dot_ref);
-#endif
-
-//----------------------------------------------------------------------------//
-
-#if defined(RAJA_ENABLE_HPX)
-{
-  std::cout << "\n Running RAJA HPX dot product...\n";
-
-  // _rajaomp_dotprod_start
-  RAJA::ReduceSum<RAJA::hpx_reduce, double> hpxdot(0.0);
-
-  RAJA::forall<RAJA::hpx_parallel_for_exec>(RAJA::RangeSegment(0, N), [&] (int i) { 
-    hpxdot += a[i] * b[i]; 
-  });    
-
-  dot = hpxdot.get();
-
-  std::cout << "\t (a, b) = " << dot << std::endl;
-
-  checkResult(dot, dot_ref);
-}
 #endif
 
 //----------------------------------------------------------------------------//
@@ -235,13 +250,22 @@ int main(int RAJA_UNUSED_ARG(argc), char **RAJA_UNUSED_ARG(argv[]))
 
 //----------------------------------------------------------------------------//
 
-
   memoryManager::deallocate(a);
   memoryManager::deallocate(b);
 
   std::cout << "\n DONE!...\n";
 
   return 0;
+
+#endif
+//----------------------------------------------------------------------------//
+
+#if defined(RAJA_ENABLE_HPX)
+
+  return hpx::init(argc, argv);
+
+#endif
+
 }
 
 //

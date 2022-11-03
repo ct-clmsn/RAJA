@@ -20,7 +20,7 @@ endif()
 if (ENABLE_HPX)
   if(EXISTS "${HPX_DIR}")
     set(__hpx_dir ${HPX_DIR})
-    find_package(HPX REQUIRED NO_CMAKE_PACKAGE_REGISTRY)
+    find_package(HPX REQUIRED)
 
     if(NOT HPX_FOUND)
       set(ENABLE_HPX Off)
@@ -48,7 +48,17 @@ if (ENABLE_HPX)
     endif()
 
     blt_register_library(
-      NAME HPX::hpx HPX::wrap_main
+      NAME HPX::hpx
+      INCLUDES ${HPX_INCLUDE_DIRS}
+      LIBRARIES ${HPX_LIBRARIES})
+
+    blt_register_library(
+      NAME HPX::wrap_main
+      INCLUDES ${HPX_INCLUDE_DIRS}
+      LIBRARIES ${HPX_LIBRARIES})
+
+    blt_register_library(
+      NAME HPX::component
       INCLUDES ${HPX_INCLUDE_DIRS}
       LIBRARIES ${HPX_LIBRARIES})
 

@@ -12,11 +12,6 @@
 
 #include "memoryManager.hpp"
 
-#if defined(RAJA_ENABLE_HPX)
-#include <hpx/config.hpp>
-#include <hpx/hpx_main.hpp>
-#endif
-
 #include "RAJA/RAJA.hpp"
 
 /*
@@ -98,11 +93,172 @@ void printResult(T *C, int N);
 template <typename T>
 void printResult(RAJA::View<T, RAJA::Layout<DIM>> Cview, int N);
 
+#if defined(RAJA_ENABLE_HPX)
 
-int main(int RAJA_UNUSED_ARG(argc), char **RAJA_UNUSED_ARG(argv[]))
+#include <hpx/config.hpp>
+#include <hpx/hpx_init.hpp>
+
+int hpx_main(int argc, char ** argv) {
+
+//
+// Define num rows/cols in matrix
+//
+  const int N = 1000;
+//const int N = CUDA_BLOCK_SIZE * CUDA_BLOCK_SIZE;
+
+//
+// Allocate and initialize matrix data.
+//
+  double *A = memoryManager::allocate<double>(N * N);
+  double *B = memoryManager::allocate<double>(N * N);
+  double *C = memoryManager::allocate<double>(N * N);
+
+  for (int row = 0; row < N; ++row) {
+    for (int col = 0; col < N; ++col) {
+      A(row, col) = row;
+      B(row, col) = col;
+    }
+  }
+
+//----------------------------------------------------------------------------//
+
+//
+// We define RAJA range segments to define the ranges of
+// row, column, and dot-product loops for RAJA variants
+//
+  // _matmult_ranges_start
+  RAJA::RangeSegment row_range(0, N);
+  RAJA::RangeSegment col_range(0, N);
+  RAJA::RangeSegment dot_range(0, N);
+  // _matmult_ranges_end
+
+//----------------------------------------------------------------------------//
+
+//
+// For the RAJA implementations of matrix multiplication, we
+// use RAJA 'View' objects to access the matrix data. A RAJA view
+// holds a pointer to a data array and enables multi-dimensional indexing
+// into that data, similar to the macros we defined above.
+//
+  // _matmult_views_start
+  RAJA::View<double, RAJA::Layout<DIM>> Aview(A, N, N);
+  RAJA::View<double, RAJA::Layout<DIM>> Bview(B, N, N);
+  RAJA::View<double, RAJA::Layout<DIM>> Cview(C, N, N);
+  // _matmult_views_end
+
+//----------------------------------------------------------------------------//
+
+
+  std::cout << "\n Running HPX mat-mult (RAJA-nested - hpx outer)...\n";
+
+  std::memset(C, 0, N*N * sizeof(double));
+
+  // _matmult_ompkernel_start
+  using EXEC_POL1 =
+    RAJA::KernelPolicy<
+      RAJA::statement::For<1, RAJA::hpx_parallel_for_exec,  // row
+        RAJA::statement::For<0, RAJA::loop_exec,            // col
+          RAJA::statement::Lambda<0>
+        >
+      >
+    >;
+  // _matmult_ompkernel_end
+
+  RAJA::kernel<EXEC_POL1>(RAJA::make_tuple(col_range, row_range),
+    [=](int col, int row) {
+
+    double dot = 0.0;
+    for (int k = 0; k < N; ++k) {
+      dot += Aview(row, k) * Bview(k, col);
+    }
+    Cview(row, col) = dot;
+
+  });
+
+  checkResult<double>(Cview, N);
+//printResult<double>(Cview, N);
+
+//----------------------------------------------------------------------------//
+
+  std::cout << "\n Running HPX mat-mult (RAJA-nested - hpx inner)...\n";
+
+  std::memset(C, 0, N*N * sizeof(double));
+
+  //
+  // Swapping the template arguments in this nested policy swaps the loop
+  // nest ordering so the col loop is on the outside and the row loop is
+  // nested within it. The execution policies on each loop remain the same
+  // as the previous implementation; i.e., col (outer) iterations run
+  // sequentially, while row (inner) iterations execute in parallel.
+  //
+  // _matmult_ompkernel_swap_start
+  using EXEC_POL2 =
+    RAJA::KernelPolicy<
+      RAJA::statement::For<0, RAJA::loop_exec,                  // col
+        RAJA::statement::For<1, RAJA::hpx_parallel_for_exec,    // row
+          RAJA::statement::Lambda<0>
+        >
+      >
+    >;
+  // _matmult_ompkernel_swap_end
+
+  RAJA::kernel<EXEC_POL2>( RAJA::make_tuple(col_range, row_range),
+    [=](int col, int row) {
+
+    double dot = 0.0;
+    for (int k = 0; k < N; ++k) {
+      dot += Aview(row, k) * Bview(k, col);
+    }
+    Cview(row, col) = dot;
+
+  });
+
+  checkResult<double>(Cview, N);
+//printResult<double>(Cview, N);
+
+//----------------------------------------------------------------------------//
+
+  std::cout << "\n Running HPX mat-mult (RAJA-nested - collapse)...\n";
+
+  std::memset(C, 0, N*N * sizeof(double));
+
+  //
+  // This policy collapses the row and col loops in an OpenMP parallel region.
+  // This is the same as using an OpenMP 'parallel for' directive on the
+  // outer loop with a 'collapse(2) clause.
+  //
+  using EXEC_POL3 =
+    RAJA::KernelPolicy<
+      RAJA::statement::Collapse<RAJA::hpx_parallel_collapse_exec,
+                                RAJA::ArgList<1, 0>,   // row, col
+        RAJA::statement::Lambda<0>
+      >
+    >;
+
+  RAJA::kernel<EXEC_POL3>(RAJA::make_tuple(col_range, row_range),
+    [=](int col, int row) {
+
+    double dot = 0.0;
+    for (int k = 0; k < N; ++k) {
+      dot += Aview(row, k) * Bview(k, col);
+    }
+    Cview(row, col) = dot;
+
+  });
+  checkResult<double>(Cview, N);
+//printResult<double>(Cview, N);
+
+    return hpx::finalize();
+}
+
+#endif
+
+int main(int argc, char ** argv)
 {
 
   std::cout << "\n\nRAJA matrix multiplication example...\n";
+
+#if !defined(RAJA_ENABLE_HPX)
 
 //
 // Define num rows/cols in matrix
@@ -414,109 +570,6 @@ int main(int RAJA_UNUSED_ARG(argc), char **RAJA_UNUSED_ARG(argv[]))
   checkResult<double>(Cview, N);
 //printResult<double>(Cview, N);
 #endif // if RAJA_ENABLE_OPENMP
-
-//----------------------------------------------------------------------------//
-
-#if defined(RAJA_ENABLE_HPX)
-  std::cout << "\n Running HPX mat-mult (RAJA-nested - hpx outer)...\n";
-
-  std::memset(C, 0, N*N * sizeof(double));
-
-  // _matmult_ompkernel_start
-  using EXEC_POL1 =
-    RAJA::KernelPolicy<
-      RAJA::statement::For<1, RAJA::hpx_parallel_for_exec,  // row
-        RAJA::statement::For<0, RAJA::loop_exec,            // col
-          RAJA::statement::Lambda<0>
-        >
-      >
-    >;
-  // _matmult_ompkernel_end
-
-  RAJA::kernel<EXEC_POL1>(RAJA::make_tuple(col_range, row_range),
-    [=](int col, int row) {
-
-    double dot = 0.0;
-    for (int k = 0; k < N; ++k) {
-      dot += Aview(row, k) * Bview(k, col);
-    }
-    Cview(row, col) = dot;
-
-  });
-
-  checkResult<double>(Cview, N);
-//printResult<double>(Cview, N);
-
-//----------------------------------------------------------------------------//
-
-  std::cout << "\n Running HPX mat-mult (RAJA-nested - hpx inner)...\n";
-
-  std::memset(C, 0, N*N * sizeof(double));
-
-  //
-  // Swapping the template arguments in this nested policy swaps the loop
-  // nest ordering so the col loop is on the outside and the row loop is
-  // nested within it. The execution policies on each loop remain the same
-  // as the previous implementation; i.e., col (outer) iterations run
-  // sequentially, while row (inner) iterations execute in parallel.
-  //
-  // _matmult_ompkernel_swap_start
-  using EXEC_POL2 =
-    RAJA::KernelPolicy<
-      RAJA::statement::For<0, RAJA::loop_exec,                  // col
-        RAJA::statement::For<1, RAJA::hpx_parallel_for_exec,    // row
-          RAJA::statement::Lambda<0>
-        >
-      >
-    >;
-  // _matmult_ompkernel_swap_end
-
-  RAJA::kernel<EXEC_POL2>( RAJA::make_tuple(col_range, row_range),
-    [=](int col, int row) {
-
-    double dot = 0.0;
-    for (int k = 0; k < N; ++k) {
-      dot += Aview(row, k) * Bview(k, col);
-    }
-    Cview(row, col) = dot;
-
-  });
-
-  checkResult<double>(Cview, N);
-//printResult<double>(Cview, N);
-
-//----------------------------------------------------------------------------//
-
-  std::cout << "\n Running HPX mat-mult (RAJA-nested - collapse)...\n";
-
-  std::memset(C, 0, N*N * sizeof(double));
-
-  //
-  // This policy collapses the row and col loops in an OpenMP parallel region.
-  // This is the same as using an OpenMP 'parallel for' directive on the
-  // outer loop with a 'collapse(2) clause.
-  //
-  using EXEC_POL3 =
-    RAJA::KernelPolicy<
-      RAJA::statement::Collapse<RAJA::hpx_parallel_collapse_exec,
-                                RAJA::ArgList<1, 0>,   // row, col
-        RAJA::statement::Lambda<0>
-      >
-    >;
-
-  RAJA::kernel<EXEC_POL3>(RAJA::make_tuple(col_range, row_range),
-    [=](int col, int row) {
-
-    double dot = 0.0;
-    for (int k = 0; k < N; ++k) {
-      dot += Aview(row, k) * Bview(k, col);
-    }
-    Cview(row, col) = dot;
-
-  });
-  checkResult<double>(Cview, N);
-//printResult<double>(Cview, N);
-#endif // if RAJA_ENABLE_HPX
 
 //----------------------------------------------------------------------------//
 
@@ -1340,6 +1393,16 @@ int main(int RAJA_UNUSED_ARG(argc), char **RAJA_UNUSED_ARG(argv[]))
   memoryManager::deallocate(C);
 
   std::cout << "\n DONE!...\n";
+
+#endif
+
+//----------------------------------------------------------------------------//
+
+#if defined(RAJA_ENABLE_HPX)
+
+  return hpx::init(argc, argv);
+
+#endif // if RAJA_ENABLE_HPX
 
   return 0;
 }

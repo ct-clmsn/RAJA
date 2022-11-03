@@ -11,11 +11,6 @@
 
 #include "memoryManager.hpp"
 
-#if defined(RAJA_ENABLE_HPX)
-#include <hpx/config.hpp>
-#include <hpx/hpx_main.hpp>
-#endif
-
 #include "RAJA/RAJA.hpp"
 
 /*
@@ -33,6 +28,58 @@
  * If CUDA is enabled, CUDA unified memory is used. 
  */
 
+//
+// Functions for checking and printing results
+//
+void checkResult(int* res, int len); 
+void printResult(int* res, int len);
+
+#if defined(RAJA_ENABLE_HPX)
+
+#include <hpx/config.hpp>
+#include <hpx/hpx_init.hpp>
+
+int hpx_main(int argc, char ** argv) {
+
+//
+// Define vector length
+//
+  const int N = 1000000;
+
+//
+// Allocate and initialize vector data
+//
+  //std::vector<int> a(N), b(N), c(N);
+  int *a = memoryManager::allocate<int>(N);
+  int *b = memoryManager::allocate<int>(N);
+  int *c = memoryManager::allocate<int>(N);
+
+
+  for (int i = 0; i < N; ++i) {
+    a[i] = -i;
+    b[i] = i;
+  }
+
+  std::cout << "\n Running RAJA HPX vector addition...\n";
+
+  // _rajaomp_vector_add_start
+  RAJA::forall<RAJA::hpx_parallel_for_exec>(RAJA::RangeSegment(0, N), [=] (int i) { 
+    c[i] = a[i] + b[i]; 
+  });
+  // _rajaomp_vector_add_end
+
+  checkResult(c, N);
+
+  memoryManager::deallocate(a);
+  memoryManager::deallocate(b);
+  memoryManager::deallocate(c);
+
+  return hpx::finalize();
+
+}
+
+#endif
+
 /*
   CUDA_BLOCK_SIZE - specifies the number of threads in a CUDA thread block
 */
@@ -48,14 +95,7 @@ const int HIP_BLOCK_SIZE = 256;
 const int SYCL_BLOCK_SIZE = 256;
 #endif
 
-//
-// Functions for checking and printing results
-//
-void checkResult(int* res, int len); 
-void printResult(int* res, int len);
-
-
-int main(int RAJA_UNUSED_ARG(argc), char **RAJA_UNUSED_ARG(argv[]))
+int main(int argc, char **argv)
 {
 
   std::cout << "\n\nRAJA vector addition example...\n";
@@ -65,6 +105,7 @@ int main(int RAJA_UNUSED_ARG(argc), char **RAJA_UNUSED_ARG(argv[]))
   ::RAJA::sycl::detail::setQueue(memoryManager::sycl_res);
 #endif
 
+#if !defined(RAJA_ENABLE_HPX)
 //
 // Define vector length
 //
@@ -160,23 +201,6 @@ int main(int RAJA_UNUSED_ARG(argc), char **RAJA_UNUSED_ARG(argv[]))
 
 //----------------------------------------------------------------------------//
 
-#if defined(RAJA_ENABLE_HPX)
-
-  std::cout << "\n Running RAJA HPX vector addition...\n";
-
-  // _rajaomp_vector_add_start
-  RAJA::forall<RAJA::hpx_parallel_for_exec>(RAJA::RangeSegment(0, N), [&] (int i) { 
-    c[i] = a[i] + b[i]; 
-  });
-  // _rajaomp_vector_add_end
-
-  checkResult(c, N);
-//printResult(c, N);
-
-#endif
-
-//----------------------------------------------------------------------------//
-
 #if defined(RAJA_ENABLE_CUDA)
   std::cout << "\n Running RAJA CUDA vector addition...\n";
 
@@ -260,6 +284,17 @@ int main(int RAJA_UNUSED_ARG(argc), char **RAJA_UNUSED_ARG(argv[]))
   std::cout << "\n DONE!...\n";
 
   return 0;
+
+#endif
+
+//----------------------------------------------------------------------------//
+
+#if defined(RAJA_ENABLE_HPX)
+
+  return hpx::init(argc, argv);
+
+#endif
+
 }
 
 //

@@ -9,11 +9,6 @@
 #include <cstring>
 #include <iostream>
 
-#if defined(RAJA_ENABLE_HPX)
-#include <hpx/config.hpp>
-#include <hpx/hpx_main.hpp>
-#endif
-
 #include "RAJA/RAJA.hpp"
 
 /*

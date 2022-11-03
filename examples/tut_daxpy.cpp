@@ -9,12 +9,78 @@
 #include <cstring>
 #include <iostream>
 
-#if defined(RAJA_ENABLE_HPX)
-#include <hpx/config.hpp>
-#include <hpx/hpx_main.hpp>
-#endif
-
 #include "RAJA/RAJA.hpp"
+
+//
+// Functions for checking and printing results
+//
+void checkResult(double* v1, double* v2, int len);
+void printResult(double* v, int len); 
+
+#if defined(RAJA_ENABLE_HPX)
+
+#include <hpx/config.hpp>
+#include <hpx/hpx_init.hpp>
+
+int hpx_main(int argc, char ** argv) {
+
+//
+// Define vector length
+//
+  const int N = 1000000;
+
+//
+// Allocate and initialize vector data.
+//
+  double* a0 = new double[N];
+  double* aref = new double[N];
+
+  double* ta = new double[N];
+  double* tb = new double[N];
+  
+  double c = 3.14159;
+  
+  for (int i = 0; i < N; i++) {
+    a0[i] = 1.0;
+    tb[i] = 2.0;
+  }
+
+//
+// Declare and set pointers to array data. 
+// We reset them for each daxpy version so that 
+// they all look the same.
+//
+
+  double* a = ta;
+  double* b = tb;
+
+  std::memcpy( a, a0, N * sizeof(double) );  
+
+  for (int i = 0; i < N; ++i) {
+    a[i] += b[i] * c;
+  }
+
+  std::memcpy( aref, a, N* sizeof(double) ); 
+
+  std::cout << "\n Running RAJA HPX daxpy...\n";
+   
+  std::memcpy( a, a0, N * sizeof(double) );  
+
+  RAJA::forall<RAJA::hpx_parallel_for_exec>(RAJA::RangeSegment(0, N), [=] (int i) {
+    a[i] += b[i] * c;
+  });
+
+  checkResult(a, aref, N);
+
+  delete[] a0; 
+  delete[] aref; 
+  delete[] ta; 
+  delete[] tb;
+ 
+  return hpx::finalize();
+}
+
+#endif
 
 /*
  *  Daxpy Example
@@ -29,17 +95,12 @@
  *    -  Execution policies
  */
 
-//
-// Functions for checking and printing results
-//
-void checkResult(double* v1, double* v2, int len);
-void printResult(double* v, int len); 
-
-int main(int RAJA_UNUSED_ARG(argc), char **RAJA_UNUSED_ARG(argv[]))
+int main(int argc, char **argv)
 {
 
   std::cout << "\n\nRAJA daxpy example...\n";
 
+#if !defined(RAJA_ENABLE_HPX)
 //
 // Define vector length
 //
@@ -146,23 +207,6 @@ int main(int RAJA_UNUSED_ARG(argc), char **RAJA_UNUSED_ARG(argv[]))
 
 //----------------------------------------------------------------------------//
 
-#if defined(RAJA_ENABLE_HPX)
-
-  std::cout << "\n Running RAJA HPX daxpy...\n";
-   
-  std::memcpy( a, a0, N * sizeof(double) );  
-
-  RAJA::forall<RAJA::hpx_parallel_for_exec>(RAJA::RangeSegment(0, N), [&] (int i) {
-    a[i] += b[i] * b[i]; //c
-  });
-
-  checkResult(a, aref, N);
-//printResult(a, N);
-
-#endif
-
-//----------------------------------------------------------------------------//
-
 #if defined(RAJA_ENABLE_CUDA)
 //
 // RAJA CUDA parallel GPU version (256 threads per thread block).
@@ -234,6 +278,17 @@ int main(int RAJA_UNUSED_ARG(argc), char **RAJA_UNUSED_ARG(argv[]))
   std::cout << "\n DONE!...\n";
 
   return 0;
+
+#endif
+
+//----------------------------------------------------------------------------//
+
+#if defined(RAJA_ENABLE_HPX)
+
+  return hpx::init(argc, argv);
+
+#endif
+
 }
 
 //

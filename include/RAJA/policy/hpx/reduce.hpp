@@ -25,6 +25,8 @@
 
 #if defined(RAJA_ENABLE_HPX)
 
+#include <hpx/mutex.hpp>
+
 #include <memory>
 #include <vector>
 #include <mutex>
@@ -41,79 +43,20 @@ namespace RAJA
 
 namespace detail
 {
+//class ReduceHPXOrdered
 template <typename T, typename Reduce>
 class ReduceHPX
-{
-private:
-  static std::mutex mtx_;
-
-  //! HPX native per-thread container
-  std::shared_ptr<T> data;
-
-public:
-  //! default constructor calls the reset method
-  ReduceHPX() { reset(T(), T()); }
-
-  //! constructor requires a default value for the reducer
-  explicit ReduceHPX(T init_val, T initializer)
-  {
-    reset(init_val, initializer);
-  }
-
-  void reset(T init_val, T initializer)
-  {
-    data = std::shared_ptr<T>(
-        std::make_shared<T>( initializer ));
-    (*data) = init_val;
-  }
-
-  /*!
-   *  \return the calculated reduced value
-   */
-  T get() const { return local(); }
-
-  /*!
-   *  \return update the local value
-   */
-  void combine(const T& other) {
-     std::unique_lock<std::mutex> l{mtx_};
-     Reduce{}(*(data), other);
-  }
-
-  /*!
-   *  \return reference to the local value
-   */
-  T& local() const { return (*data); }
-};
-
-template <typename T, typename Reduce>
-std::mutex ReduceHPX<T, Reduce>::mtx_{};
-
-}  // namespace detail
-
-RAJA_DECLARE_ALL_REDUCERS(hpx_reduce, detail::ReduceHPX)
-
-///////////////////////////////////////////////////////////////////////////////
-//
-// Old ordered reductions are included below.
-//
-///////////////////////////////////////////////////////////////////////////////
-
-namespace detail
-{
-template <typename T, typename Reduce>
-class ReduceHPXOrdered
     : public reduce::detail::
-          BaseCombinable<T, Reduce, ReduceHPXOrdered<T, Reduce>>
+          BaseCombinable<T, Reduce, ReduceHPX<T, Reduce>>
 {
-  using Base = reduce::detail::BaseCombinable<T, Reduce, ReduceHPXOrdered>;
+  using Base = reduce::detail::BaseCombinable<T, Reduce, ReduceHPX>;
   std::shared_ptr<std::vector<T>> data;
 
 public:
-  ReduceHPXOrdered() { reset(T(), T()); }
+  ReduceHPX() { reset(T(), T()); }
 
   //! constructor requires a default value for the reducer
-  explicit ReduceHPXOrdered(T init_val, T identity_)
+  explicit ReduceHPX(T init_val, T identity_)
   {
     reset(init_val, identity_);
   }
@@ -122,19 +65,19 @@ public:
   {
     Base::reset(init_val, identity_);
     data = std::shared_ptr<std::vector<T>>(
-        std::make_shared<std::vector<T>>(::hpx::threads::get_thread_data(::hpx::threads::get_self_id()), identity_));
+        std::make_shared<std::vector<T>>(::hpx::get_num_worker_threads(), identity_));
   }
 
-  ~ReduceHPXOrdered()
+  ~ReduceHPX()
   {
-    Reduce{}((*data)[::hpx::threads::get_thread_data(::hpx::threads::get_self_id())], Base::my_data);
+    Reduce{}((*data)[::hpx::get_worker_thread_num()], Base::my_data);
     Base::my_data = Base::identity;
   }
 
   T get_combined() const
   {
     if (Base::my_data != Base::identity) {
-      Reduce{}((*data)[::hpx::threads::get_thread_data(::hpx::threads::get_self_id())], Base::my_data);
+      Reduce{}((*data)[::hpx::get_worker_thread_num()], Base::my_data);
       Base::my_data = Base::identity;
     }
 
@@ -148,7 +91,7 @@ public:
 
 }  // namespace detail
 
-RAJA_DECLARE_ALL_REDUCERS(hpx_reduce_ordered, detail::ReduceHPXOrdered)
+RAJA_DECLARE_ALL_REDUCERS(hpx_reduce, detail::ReduceHPX)
 
 }  // namespace RAJA
 

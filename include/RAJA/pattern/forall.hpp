@@ -159,7 +159,8 @@ RAJA_INLINE concepts::enable_if_t<
     type_traits::is_range<Container>>
 forall(Res r, ExecutionPolicy&& p, Container&& c, LoopBody&& loop_body)
 {
-  RAJA_FORCEINLINE_RECURSIVE
+    RAJA_EXTRACT_BED_IT(c);
+//  RAJA_FORCEINLINE_RECURSIVE
   return forall_impl(r,
                      std::forward<ExecutionPolicy>(p),
                      std::forward<Container>(c),
@@ -483,6 +484,7 @@ RAJA_INLINE concepts::enable_if_t<
     type_traits::is_range<Container>>
 forall(ExecutionPolicy&& p, Res r, Container&& c, LoopBody&& loop_body)
 {
+    RAJA_EXTRACT_BED_IT(c);
   static_assert(type_traits::is_random_access_range<Container>::value,
                 "Container does not model RandomAccessIterator");
 

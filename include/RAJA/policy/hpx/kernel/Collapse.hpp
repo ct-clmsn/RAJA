@@ -68,8 +68,6 @@ struct StatementExecutor<statement::Collapse<hpx_parallel_collapse_exec,
 
     const auto len = l0 * l1;
 
-    auto privatizer = thread_privatize(data);
-
     // Set the argument types for this loop
     using NewTypes0 = setSegmentTypeFromData<Types, Arg0, Data>;
     using NewTypes1 = setSegmentTypeFromData<NewTypes0, Arg1, Data>;
@@ -77,9 +75,10 @@ struct StatementExecutor<statement::Collapse<hpx_parallel_collapse_exec,
     auto rng = ::hpx::util::detail::make_counting_shape(len);
 
     ::hpx::for_each(::hpx::execution::par,
-        std::begin(rng), std::end(rng), [&](const auto i) {
+        std::begin(rng), std::end(rng), [=](const auto i) {
             const auto x = i / l1;
             const auto y = i % l1;
+            auto privatizer = thread_privatize(data);
             auto& private_data = privatizer.get_priv();
             private_data.template assign_offset<Arg0>(x);
             private_data.template assign_offset<Arg1>(y);
@@ -123,7 +122,7 @@ struct StatementExecutor<statement::Collapse<hpx_parallel_collapse_exec,
     const auto YZ = l1 * l2;
 
     ::hpx::for_each(::hpx::execution::par,
-        std::begin(rng), std::end(rng), [&](const auto i) {
+        std::begin(rng), std::end(rng), [=](const auto i) {
             const auto modiYZ = i % YZ;
             const auto z = modiYZ % l2;
             const auto y = modiYZ / l2;

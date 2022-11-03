@@ -61,9 +61,9 @@ RAJA_INLINE resources::EventProxy<resources::Host> forall_impl(resources::Host h
                                                     Iterable&& iter,
                                                     Func&& loop_body)
 {
-  RAJA::region<RAJA::hpx_parallel_region>([&host_res, &iter, &loop_body]() {
+//  RAJA::region<RAJA::hpx_parallel_region>([=]() {
     forall_impl(host_res, InnerPolicy{}, iter, loop_body);
-  });
+//  });
   return resources::EventProxy<resources::Host>(host_res);
 }
 
@@ -86,8 +86,12 @@ namespace internal
                                Func&& loop_body)
   {
     RAJA_EXTRACT_BED_IT(iter);
-    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [&loop_body, &begin_it](decltype(distance_it) i) {
-      loop_body(begin_it[i]);
+    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [=](auto i) {
+       using RAJA::internal::thread_privatize;
+       auto privatizer = thread_privatize(loop_body);
+       auto body = privatizer.get_priv();
+
+       body(begin_it[i]);
     });
   }
 
@@ -101,8 +105,12 @@ namespace internal
                                Func&& loop_body)
   {
     RAJA_EXTRACT_BED_IT(iter);
-    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [&loop_body, &begin_it](decltype(distance_it) i) {
-      loop_body(begin_it[i]);
+    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [=](auto i) {
+       using RAJA::internal::thread_privatize;
+       auto privatizer = thread_privatize(loop_body);
+       auto body = privatizer.get_priv();
+
+       body(begin_it[i]);
     });
   }
 
@@ -116,8 +124,12 @@ namespace internal
                                Func&& loop_body)
   {
     RAJA_EXTRACT_BED_IT(iter);
-    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [&loop_body, &begin_it](decltype(distance_it) i) {
-      loop_body(begin_it[i]);
+    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [=](auto i) {
+       using RAJA::internal::thread_privatize;
+       auto privatizer = thread_privatize(loop_body);
+       auto body = privatizer.get_priv();
+
+       body(begin_it[i]);
     });
   }
 
@@ -131,8 +143,12 @@ namespace internal
                                Func&& loop_body)
   {
     RAJA_EXTRACT_BED_IT(iter);
-    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [&loop_body, &begin_it](decltype(distance_it) i) {
-      loop_body(begin_it[i]);
+    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [=](auto i) {
+       using RAJA::internal::thread_privatize;
+       auto privatizer = thread_privatize(loop_body);
+       auto body = privatizer.get_priv();
+
+       body(begin_it[i]);
     });
   }
 
@@ -146,8 +162,12 @@ namespace internal
                                Func&& loop_body)
   {
     RAJA_EXTRACT_BED_IT(iter);
-    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [&loop_body, &begin_it](decltype(distance_it) i) {
-      loop_body(begin_it[i]);
+    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [=](auto i) {
+       using RAJA::internal::thread_privatize;
+       auto privatizer = thread_privatize(loop_body);
+       auto body = privatizer.get_priv();
+
+       body(begin_it[i]);
     });
   }
 
@@ -161,8 +181,12 @@ namespace internal
                                Func&& loop_body)
   {
     RAJA_EXTRACT_BED_IT(iter);
-    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [&loop_body, &begin_it](decltype(distance_it) i) {
-      loop_body(begin_it[i]);
+    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [=](auto i) {
+       using RAJA::internal::thread_privatize;
+       auto privatizer = thread_privatize(loop_body);
+       auto body = privatizer.get_priv();
+
+       body(begin_it[i]);
     });
   }
 
@@ -176,8 +200,12 @@ namespace internal
                                Func&& loop_body)
   {
     RAJA_EXTRACT_BED_IT(iter);
-    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [&loop_body, &begin_it](decltype(distance_it) i) {
-      loop_body(begin_it[i]);
+    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [=](auto i) {
+       using RAJA::internal::thread_privatize;
+       auto privatizer = thread_privatize(loop_body);
+       auto body = privatizer.get_priv();
+
+       body(begin_it[i]);
     });
   }
 
@@ -190,8 +218,12 @@ namespace internal
                                Func&& loop_body)
   {
     RAJA_EXTRACT_BED_IT(iter);
-    ::hpx::for_each(rt.exec, begin_it, end_it, [&loop_body, &begin_it](decltype(distance_it) i) {
-      loop_body(begin_it[i]);
+    ::hpx::for_each(rt.exec, begin_it, end_it, [=](auto i) {
+       using RAJA::internal::thread_privatize;
+       auto privatizer = thread_privatize(loop_body);
+       auto body = privatizer.get_priv();
+
+       body(begin_it[i]);
     });
   }
 
@@ -219,7 +251,7 @@ namespace internal
                                Func&& loop_body)
   {
     RAJA_EXTRACT_BED_IT(iter);
-    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [&loop_body, &begin_it](decltype(distance_it) i) {
+    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [=](const auto i) {
       loop_body(begin_it[i]);
     });
   }
@@ -234,7 +266,7 @@ namespace internal
                                Func&& loop_body)
   {
     RAJA_EXTRACT_BED_IT(iter);
-    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [&loop_body, &begin_it](decltype(distance_it) i) {
+    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [=](const auto i) {
       loop_body(begin_it[i]);
     });
   }
@@ -249,7 +281,7 @@ namespace internal
                                Func&& loop_body)
   {
     RAJA_EXTRACT_BED_IT(iter);
-    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [&loop_body, &begin_it](decltype(distance_it) i) {
+    ::hpx::for_each(::hpx::execution::par, begin_it, end_it, [=](const auto i) {
       loop_body(begin_it[i]);
     });
   }
@@ -274,8 +306,9 @@ RAJA_INLINE resources::EventProxy<resources::Host> forall_impl(resources::Host h
                                                                Iterable&& iter,
                                                                Func&& loop_body)
 {
-  internal::forall_impl(Schedule{}, std::forward<Iterable>(iter), std::forward<Func>(loop_body));
-  return resources::EventProxy<resources::Host>(host_res);
+    RAJA_EXTRACT_BED_IT(iter);
+    internal::forall_impl(Schedule{}, std::forward<Iterable>(iter), std::forward<Func>(loop_body));
+    return resources::EventProxy<resources::Host>(host_res);
 }
 
 template <typename Schedule, typename Iterable, typename Func>
@@ -296,9 +329,10 @@ RAJA_INLINE void forall(
     LOOP_BODY loop_body)
 {
   int num_seg = iset.getNumSegments();
-  auto irange = ::hpx::util::detail::make_counting_shape(num_seg);
 
-  ::hpx::for_each(::hpx::execution::seq, ::hpx::util::begin(irange), ::hpx::util::end(irange), [&iset, &loop_body](const int isi) {
+  RAJA::RangeSegment iter(0, num_seg);
+  RAJA_EXTRACT_BED_IT(iter);
+  ::hpx::for_each(::hpx::execution::seq, begin_it, end_it, [=](const int isi) {
       iset.segmentCall(isi, loop_body); 
   });  // iterate over segments of index set
 }
